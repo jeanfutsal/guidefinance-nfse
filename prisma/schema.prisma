@@ -1,0 +1,50 @@
+// This is your Prisma schema file,
+// learn more it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Invoice {
+  id                 String   @id @default(uuid())
+  accessKey          String   @unique // Chave de acesso de 50 dígitos
+  number             String   // Número da NFS-e
+  issueDate          DateTime // Data e hora da emissão
+  competenceDate     String   // Competência da NFS-e
+  
+  // Emitente (Prestador)
+  emitenteCnpj       String
+  emitenteName       String
+  emitenteCity       String
+  emitenteState      String
+  
+  // Tomador (Cliente)
+  tomadorCnpj        String
+  tomadorName        String
+  tomadorCity        String
+  tomadorState       String
+  
+  // Serviço
+  serviceCode        String
+  serviceDescription String   // Descrição do serviço
+  
+  // Valores e Impostos
+  serviceValue       Float    // Valor do Serviço (Bruto)
+  liquidValue        Float    // Valor Líquido
+  issqnValue         Float    @default(0.0) // Valor do ISSQN
+  issqnRate          Float    @default(0.0) // Alíquota ISSQN (%)
+  issqnRetained      Boolean  @default(false)
+  federalRetentions  Float    @default(0.0) // Retenções Federais (IRRF, CSLL, PIS, COFINS)
+  
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([issueDate])
+  @@index([emitenteCnpj])
+  @@index([tomadorCnpj])
+}
