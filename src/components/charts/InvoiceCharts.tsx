@@ -59,8 +59,12 @@ export function BillingAreaChart({ data }: BillingChartProps) {
         <Tooltip
           contentStyle={{ background: "#131b2e", border: "1px solid #1e293b", borderRadius: 8, fontSize: 12 }}
           labelStyle={{ color: "#f8fafc", fontWeight: 600 }}
-          formatter={(v: number, name: string) => [
-            formatBRL(v),
+          //formatter={(v: number, name: string) => [
+          //  formatBRL(v),
+          //  name === "value" ? "Faturamento" : "Impostos",
+          //]}
+          formatter={(value, name) => [
+            formatBRL(Number(value ?? 0)),
             name === "value" ? "Faturamento" : "Impostos",
           ]}
         />
