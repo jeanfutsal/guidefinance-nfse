@@ -102,7 +102,7 @@ export function ClientsBarChart({ data }: ClientsBarChartProps) {
         <Tooltip
           contentStyle={{ background: "#131b2e", border: "1px solid #1e293b", borderRadius: 8, fontSize: 12 }}
           labelStyle={{ color: "#f8fafc", fontWeight: 600 }}
-          formatter={(v: number) => [formatBRL(v), "Faturamento"]}
+          formatter={(value) => [formatBRL(Number(value ?? 0)), "Faturamento"]}
         />
         <Bar dataKey="value" radius={[0, 4, 4, 0]}>
           {displayData.map((_, i) => (
@@ -145,7 +145,7 @@ export function DistributionPieChart({ data }: DistributionPieProps) {
         </Pie>
         <Tooltip
           contentStyle={{ background: "#131b2e", border: "1px solid #1e293b", borderRadius: 8, fontSize: 12 }}
-          formatter={(v: number, name: string) => [formatBRL(v), name]}
+          formatter={(value, name) => [formatBRL(Number(value ?? 0)), String(name)]}
         />
         <Legend
           iconSize={8}
