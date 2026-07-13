@@ -1,5 +1,6 @@
 import { Header } from "@/components/ui/Header";
 import { BillingAreaChart, ClientsBarChart, DistributionPieChart } from "@/components/charts/InvoiceCharts";
+import { GoalsDashboard } from "@/components/charts/GoalsDashboard";
 import { InvoiceRepositoryProvider } from "@/infra/repositories/InvoiceRepositoryProvider";
 import { BarChart3, TrendingUp, Receipt, Users } from "lucide-react";
 
@@ -43,6 +44,14 @@ export default async function RelatoriosPage() {
             ))}
           </div>
         </div>
+
+        {/* Análise de Metas interativa */}
+        <GoalsDashboard
+          totalLiquid={stats.totalLiquid}
+          totalInvoiced={stats.totalInvoiced}
+          monthlyBilling={stats.monthlyBilling}
+        />
+
 
         {/* Faturamento mensal */}
         <div className="glass-card rounded-xl p-5 border border-border">
