@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Target, Sliders, Sparkles } from "lucide-react";
+import { Target, Sliders, Sparkles, Pencil } from "lucide-react";
 
 interface GoalsDashboardProps {
   totalLiquid: number;
@@ -48,6 +48,16 @@ export function GoalsDashboard({
   // Selected month index for the slider (starts at the last month by default)
   const [selectedIndex, setSelectedIndex] = useState(totalMonths - 1);
 
+  // Editable goal state - user types the value manually
+  const [goalInput, setGoalInput] = useState("100000");
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
+
+  // Parse goalInput to a numeric value, fallback to 1 to avoid division by zero
+  const OVERALL_GOAL = useMemo(() => {
+    const parsed = parseFloat(goalInput.replace(/\./g, "").replace(",", "."));
+    return isNaN(parsed) || parsed <= 0 ? 1 : parsed;
+  }, [goalInput]);
+
   // Compute overall totals for the left gauge (Net Revenue)
   const finalTotalLiquid = useMemo(() => {
     if (isMock) {
@@ -56,14 +66,11 @@ export function GoalsDashboard({
     return totalLiquid;
   }, [totalLiquid, billingData, isMock]);
 
-  // Overall Goal (yearly or full period)
-  const OVERALL_GOAL = 100000; // R$ 100.000,00
-
   // Calculate proportional target up to selected index for the right gauge
   const selectedTarget = useMemo(() => {
     const proportion = (selectedIndex + 1) / totalMonths;
     return OVERALL_GOAL * proportion;
-  }, [selectedIndex, totalMonths]);
+  }, [selectedIndex, totalMonths, OVERALL_GOAL]);
 
   // Cumulative values up to the selected month index
   const cumulativeNet = useMemo(() => {
@@ -173,7 +180,7 @@ export function GoalsDashboard({
         </div>
 
         {/* CENTER CARD: Interactive Neon Slider */}
-        <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-secondary/35 border border-border/60 h-full space-y-5">
+        <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-secondary/35 border border-border/60 h-full space-y-4">
           <div className="text-center">
             <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/20 text-xs font-bold text-cyan-400">
               <Sliders size={12} />
@@ -182,6 +189,49 @@ export function GoalsDashboard({
             <p className="text-xs text-muted-foreground mt-2 px-4">
               Deslize o controle abaixo para selecionar o período de faturamento acumulado.
             </p>
+          </div>
+
+          {/* Editable Goal Input */}
+          <div className="w-full px-2">
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                Meta Anual
+              </span>
+              <div className="relative flex items-center gap-2 w-full max-w-[220px]">
+                {isEditingGoal ? (
+                  <input
+                    autoFocus
+                    type="text"
+                    value={goalInput}
+                    onChange={(e) => setGoalInput(e.target.value.replace(/[^0-9.,]/g, ""))}
+                    onBlur={() => setIsEditingGoal(false)}
+                    onKeyDown={(e) => { if (e.key === "Enter") setIsEditingGoal(false); }}
+                    className="w-full text-center text-sm font-extrabold bg-transparent border-b-2 border-cyan-400 text-cyan-300 outline-none pb-0.5 tracking-wider"
+                    style={{ boxShadow: "0 2px 10px rgba(6, 182, 212, 0.5)" }}
+                    placeholder="Ex: 100000"
+                  />
+                ) : (
+                  <div
+                    className="flex items-center justify-center gap-2 w-full cursor-pointer group"
+                    onClick={() => setIsEditingGoal(true)}
+                  >
+                    <span
+                      className="text-base font-extrabold text-cyan-300 tracking-wider transition-all group-hover:text-cyan-200"
+                      style={{ textShadow: "0 0 10px rgba(6, 182, 212, 0.7)" }}
+                    >
+                      {formatBRL(OVERALL_GOAL)}
+                    </span>
+                    <Pencil
+                      size={12}
+                      className="text-cyan-500 opacity-60 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                    />
+                  </div>
+                )}
+              </div>
+              <p className="text-[9px] text-muted-foreground/60 mt-0.5">
+                {isEditingGoal ? "Pressione Enter ou clique fora para confirmar" : "Clique para editar a meta"}
+              </p>
+            </div>
           </div>
 
           {/* Selected period details */}
