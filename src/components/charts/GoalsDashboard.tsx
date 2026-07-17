@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Target, Sliders, Sparkles, Pencil, ArrowRight } from "lucide-react";
+import { Target, Sliders, Sparkles, Pencil } from "lucide-react";
 
 interface GoalsDashboardProps {
   totalLiquid: number;
@@ -30,10 +30,11 @@ export function GoalsDashboard({
   totalInvoiced,
   monthlyBilling,
 }: GoalsDashboardProps) {
-  // Define active data
+  // Define active data: database stats if available, otherwise mock data for presentation
   const isMock = !monthlyBilling || monthlyBilling.length === 0;
   const billingData = useMemo(() => {
     if (isMock) return mockMonths;
+    // Map existing database data to ensure we calculate net value
     return monthlyBilling.map((item) => ({
       month: item.month,
       value: item.value,
@@ -41,43 +42,23 @@ export function GoalsDashboard({
     }));
   }, [monthlyBilling, isMock]);
 
+  // Total available months
   const totalMonths = billingData.length;
 
-  // ── Range selection: startIndex + endIndex ──────────────────────────────
-  const [startIndex, setStartIndex] = useState(0);
-  const [endIndex, setEndIndex] = useState(totalMonths - 1);
-  // Track which handle is being set next: "start" or "end"
-  const [selecting, setSelecting] = useState<"start" | "end">("start");
+  // Selected month index for the slider (starts at the last month by default)
+  const [selectedIndex, setSelectedIndex] = useState(totalMonths - 1);
 
-  const handleMonthClick = (index: number) => {
-    if (selecting === "start") {
-      // Starting a new range selection
-      setStartIndex(index);
-      setEndIndex(index);
-      setSelecting("end");
-    } else {
-      // Setting the end of the range
-      if (index < startIndex) {
-        // Clicked before current start: swap
-        setEndIndex(startIndex);
-        setStartIndex(index);
-      } else {
-        setEndIndex(index);
-      }
-      setSelecting("start"); // Ready for next selection
-    }
-  };
-
-  // ── Editable goal ───────────────────────────────────────────────────────
+  // Editable goal state - user types the value manually
   const [goalInput, setGoalInput] = useState("100000");
   const [isEditingGoal, setIsEditingGoal] = useState(false);
 
+  // Parse goalInput to a numeric value, fallback to 1 to avoid division by zero
   const OVERALL_GOAL = useMemo(() => {
     const parsed = parseFloat(goalInput.replace(/\./g, "").replace(",", "."));
     return isNaN(parsed) || parsed <= 0 ? 1 : parsed;
   }, [goalInput]);
 
-  // ── Left gauge: all-time net liquid ────────────────────────────────────
+  // Compute overall totals for the left gauge (Net Revenue)
   const finalTotalLiquid = useMemo(() => {
     if (isMock) {
       return billingData.reduce((acc, curr) => acc + (curr.value - curr.tax), 0);
@@ -85,46 +66,42 @@ export function GoalsDashboard({
     return totalLiquid;
   }, [totalLiquid, billingData, isMock]);
 
-  // ── Right gauge: net for selected range ────────────────────────────────
-  const rangeMonthCount = endIndex - startIndex + 1;
-
-  const selectedTarget = useMemo(() => {
-    const proportion = rangeMonthCount / totalMonths;
-    return OVERALL_GOAL * proportion;
-  }, [rangeMonthCount, totalMonths, OVERALL_GOAL]);
-
+  // Cumulative values up to the selected month index
   const cumulativeNet = useMemo(() => {
     let sum = 0;
-    for (let i = startIndex; i <= endIndex; i++) {
-      sum += billingData[i].value - billingData[i].tax;
+    for (let i = 0; i <= selectedIndex; i++) {
+      const item = billingData[i];
+      sum += (item.value - item.tax);
     }
     return sum;
-  }, [startIndex, endIndex, billingData]);
+  }, [selectedIndex, billingData]);
 
-  // ── Helpers ─────────────────────────────────────────────────────────────
-  const formatBRL = (v: number) =>
-    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+  // Helper format currency BRL
+  const formatBRL = (v: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(v);
+  };
 
   const shortLabel = (month: string) => month.split("/")[0].split(" ")[0];
 
-  // ── Gauge renderer ──────────────────────────────────────────────────────
-  const renderGauge = (
-    current: number,
-    target: number,
-    fillColor: string,
-    glowColor: string
-  ) => {
+  // Helper to render Recharts gauge
+  const renderGauge = (current: number, target: number, fillColors: string[], glowColor: string) => {
     const percent = Math.min(100, (current / target) * 100);
     const gaugeData = [
       { name: "progress", value: percent },
       { name: "remaining", value: Math.max(0, 100 - percent) },
     ];
+
     return (
       <div className="relative w-full h-[140px] flex items-center justify-center">
-        <div
+        {/* Glow behind the gauge */}
+        <div 
           className="absolute bottom-0 w-[180px] h-[90px] rounded-t-full opacity-10 blur-xl pointer-events-none transition-all duration-300"
           style={{ backgroundColor: glowColor }}
         />
+        
         <ResponsiveContainer width="100%" height="100%">
           <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
             <Pie
@@ -139,11 +116,15 @@ export function GoalsDashboard({
               stroke="none"
               paddingAngle={0}
             >
-              <Cell fill={fillColor} />
+              {/* Progress part: color gradient */}
+              <Cell fill={fillColors[0]} />
+              {/* Remaining part: dark space slot background */}
               <Cell fill="#161e31" />
             </Pie>
           </PieChart>
         </ResponsiveContainer>
+
+        {/* Central Text Label */}
         <div className="absolute bottom-0 text-center flex flex-col items-center select-none">
           <span className="text-3xl font-extrabold text-foreground tracking-tight leading-none">
             {((current / target) * 100).toFixed(1)}%
@@ -158,7 +139,7 @@ export function GoalsDashboard({
 
   return (
     <div className="glass-card rounded-xl p-5 border border-border mt-6">
-      {/* Header */}
+      {/* Header section */}
       <div className="flex items-center justify-between border-b border-border/60 pb-4 mb-6">
         <div className="flex items-center gap-2">
           <Target className="text-cyan-400 animate-pulse" size={18} />
@@ -175,16 +156,18 @@ export function GoalsDashboard({
         )}
       </div>
 
-      {/* 3-column grid */}
+      {/* Main Grid Layout: Left Gauge, Center Controls, Right Gauge */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-
-        {/* ── LEFT: Total Net Revenue Gauge ── */}
+        
+        {/* LEFT CARD: Net Revenue Gauge */}
         <div className="flex flex-col items-center justify-between p-4 rounded-xl bg-secondary/20 border border-border/40 h-full">
           <div className="text-center mb-2">
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Faturamento Líquido</span>
             <h3 className="text-sm font-bold text-foreground mt-0.5">Realizado Total vs Meta</h3>
           </div>
-          {renderGauge(finalTotalLiquid, OVERALL_GOAL, "#eab308", "#eab308")}
+          
+          {renderGauge(finalTotalLiquid, OVERALL_GOAL, ["#eab308", "#161e31"], "#eab308")}
+          
           <div className="flex justify-between w-full px-8 text-[10px] font-semibold text-muted-foreground mt-2">
             <span>0%</span>
             <span>Meta: {formatBRL(OVERALL_GOAL)}</span>
@@ -192,173 +175,122 @@ export function GoalsDashboard({
           </div>
         </div>
 
-        {/* ── CENTER: Editable Goal + Month Range Picker ── */}
-        <div className="flex flex-col items-center p-4 rounded-xl bg-secondary/35 border border-border/60 h-full gap-4">
-
-          {/* Title */}
+        {/* CENTER CARD: Interactive Neon Slider */}
+        <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-secondary/35 border border-border/60 h-full space-y-4">
           <div className="text-center">
             <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/20 text-xs font-bold text-cyan-400">
               <Sliders size={12} />
-              Simulação de Período
+              Simulação Mensal
             </div>
-            <p className="text-[11px] text-muted-foreground mt-1.5 px-2">
-              Clique no <strong className="text-cyan-400">mês de início</strong> e depois no <strong className="text-cyan-400">mês de fim</strong> para definir o intervalo.
+            <p className="text-xs text-muted-foreground mt-2 px-4">
+              Deslize o controle abaixo para selecionar o período de faturamento acumulado.
             </p>
           </div>
 
-          {/* Editable Goal */}
-          <div className="flex flex-col items-center gap-1 w-full">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Meta do Período</span>
-            <div className="relative flex items-center gap-2 w-full max-w-[220px]">
-              {isEditingGoal ? (
-                <input
-                  autoFocus
-                  type="text"
-                  value={goalInput}
-                  onChange={(e) => setGoalInput(e.target.value.replace(/[^0-9.,]/g, ""))}
-                  onBlur={() => setIsEditingGoal(false)}
-                  onKeyDown={(e) => { if (e.key === "Enter") setIsEditingGoal(false); }}
-                  className="w-full text-center text-sm font-extrabold bg-transparent border-b-2 border-cyan-400 text-cyan-300 outline-none pb-0.5 tracking-wider"
-                  style={{ boxShadow: "0 2px 10px rgba(6, 182, 212, 0.5)" }}
-                  placeholder="Ex: 100000"
-                />
-              ) : (
-                <div
-                  className="flex items-center justify-center gap-2 w-full cursor-pointer group"
-                  onClick={() => setIsEditingGoal(true)}
-                >
-                  <span
-                    className="text-base font-extrabold text-cyan-300 tracking-wider transition-all group-hover:text-cyan-200"
-                    style={{ textShadow: "0 0 10px rgba(6, 182, 212, 0.7)" }}
+          {/* Editable Goal Input */}
+          <div className="w-full px-2">
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                Meta Anual
+              </span>
+              <div className="relative flex items-center gap-2 w-full max-w-[220px]">
+                {isEditingGoal ? (
+                  <input
+                    autoFocus
+                    type="text"
+                    value={goalInput}
+                    onChange={(e) => setGoalInput(e.target.value.replace(/[^0-9.,]/g, ""))}
+                    onBlur={() => setIsEditingGoal(false)}
+                    onKeyDown={(e) => { if (e.key === "Enter") setIsEditingGoal(false); }}
+                    className="w-full text-center text-sm font-extrabold bg-transparent border-b-2 border-cyan-400 text-cyan-300 outline-none pb-0.5 tracking-wider"
+                    style={{ boxShadow: "0 2px 10px rgba(6, 182, 212, 0.5)" }}
+                    placeholder="Ex: 100000"
+                  />
+                ) : (
+                  <div
+                    className="flex items-center justify-center gap-2 w-full cursor-pointer group"
+                    onClick={() => setIsEditingGoal(true)}
                   >
-                    {formatBRL(OVERALL_GOAL)}
+                    <span
+                      className="text-base font-extrabold text-cyan-300 tracking-wider transition-all group-hover:text-cyan-200"
+                      style={{ textShadow: "0 0 10px rgba(6, 182, 212, 0.7)" }}
+                    >
+                      {formatBRL(OVERALL_GOAL)}
+                    </span>
+                    <Pencil
+                      size={12}
+                      className="text-cyan-500 opacity-60 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                    />
+                  </div>
+                )}
+              </div>
+              <p className="text-[9px] text-muted-foreground/60 mt-0.5">
+                {isEditingGoal ? "Pressione Enter ou clique fora para confirmar" : "Clique para editar a meta"}
+              </p>
+            </div>
+          </div>
+
+          {/* Selected period details */}
+          <div className="text-center p-2 rounded-lg bg-card/40 border border-border/50 min-w-[200px]">
+            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Período Selecionado</span>
+            <div className="text-sm font-bold text-foreground mt-0.5">
+              {billingData[0].month} a {billingData[selectedIndex].month}
+            </div>
+            <div className="text-xs text-cyan-400 font-medium mt-1">
+              {selectedIndex + 1} {selectedIndex === 0 ? "mês selecionado" : "meses selecionados"}
+            </div>
+          </div>
+
+          {/* Neon Range Slider Container */}
+          <div className="w-full px-4 py-2">
+            <input
+              type="range"
+              min="0"
+              max={totalMonths - 1}
+              value={selectedIndex}
+              onChange={(e) => setSelectedIndex(parseInt(e.target.value))}
+              className="neon-slider"
+            />
+            
+            {/* Months Indicators */}
+            <div className="flex justify-between text-[9px] font-bold text-muted-foreground mt-3 px-1">
+              {billingData.map((d, index) => {
+                const isActive = index === selectedIndex;
+                const isPast = index <= selectedIndex;
+                return (
+                  <span
+                    key={index}
+                    className={`cursor-pointer transition-all duration-200 select-none ${
+                      isActive 
+                        ? "text-cyan-400 scale-125 font-extrabold drop-shadow-[0_0_5px_rgba(6,182,212,0.8)]" 
+                        : isPast 
+                          ? "text-muted-foreground" 
+                          : "text-muted-foreground/40"
+                    }`}
+                    onClick={() => setSelectedIndex(index)}
+                  >
+                    {shortLabel(d.month)}
                   </span>
-                  <Pencil size={12} className="text-cyan-500 opacity-60 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-                </div>
-              )}
-            </div>
-            <p className="text-[9px] text-muted-foreground/60">
-              {isEditingGoal ? "Pressione Enter ou clique fora para confirmar" : "Clique para editar a meta"}
-            </p>
-          </div>
-
-          {/* Selected period summary */}
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card/40 border border-border/50 w-full justify-center">
-            <div className="text-center">
-              <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Início</p>
-              <p
-                className="text-sm font-extrabold mt-0.5"
-                style={{
-                  color: selecting === "end" ? "#06b6d4" : "#94a3b8",
-                  textShadow: selecting === "end" ? "0 0 8px rgba(6,182,212,0.7)" : "none",
-                }}
-              >
-                {billingData[startIndex].month}
-              </p>
-            </div>
-            <ArrowRight size={14} className="text-muted-foreground/50 flex-shrink-0" />
-            <div className="text-center">
-              <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Fim</p>
-              <p
-                className="text-sm font-extrabold mt-0.5"
-                style={{
-                  color: selecting === "start" && startIndex !== endIndex ? "#06b6d4" : "#94a3b8",
-                  textShadow: selecting === "start" && startIndex !== endIndex ? "0 0 8px rgba(6,182,212,0.7)" : "none",
-                }}
-              >
-                {billingData[endIndex].month}
-              </p>
-            </div>
-            <div className="ml-2 pl-2 border-l border-border/40 text-center">
-              <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Meses</p>
-              <p className="text-sm font-extrabold text-foreground mt-0.5">{rangeMonthCount}</p>
+                );
+              })}
             </div>
           </div>
-
-          {/* Instruction hint */}
-          <p className="text-[10px] font-semibold tracking-wide px-1" style={{
-            color: selecting === "start" ? "#94a3b8" : "#06b6d4",
-            textShadow: selecting === "end" ? "0 0 6px rgba(6,182,212,0.5)" : "none",
-          }}>
-            {selecting === "start" ? "↓ Selecione o mês de início ↓" : "↓ Agora selecione o mês de fim ↓"}
-          </p>
-
-          {/* Month Picker Grid */}
-          <div className="w-full grid grid-cols-6 gap-1.5 px-1">
-            {billingData.map((d, index) => {
-              const isStart = index === startIndex;
-              const isEnd = index === endIndex;
-              const isInRange = index > startIndex && index < endIndex;
-              const isEdge = isStart || isEnd;
-
-              return (
-                <button
-                  key={index}
-                  onClick={() => handleMonthClick(index)}
-                  className={`
-                    relative py-1.5 rounded-md text-[10px] font-bold transition-all duration-150 select-none
-                    ${isEdge
-                      ? "text-slate-900 font-extrabold scale-105"
-                      : isInRange
-                        ? "text-cyan-300"
-                        : "text-muted-foreground/60 hover:text-muted-foreground"
-                    }
-                  `}
-                  style={
-                    isEdge
-                      ? {
-                          background: "linear-gradient(135deg, #06b6d4, #0e7490)",
-                          boxShadow: "0 0 10px rgba(6,182,212,0.7), 0 0 20px rgba(6,182,212,0.3)",
-                        }
-                      : isInRange
-                        ? {
-                            background: "rgba(6, 182, 212, 0.12)",
-                            border: "1px solid rgba(6, 182, 212, 0.25)",
-                          }
-                        : {
-                            background: "rgba(30, 41, 59, 0.5)",
-                            border: "1px solid rgba(51, 65, 85, 0.4)",
-                          }
-                  }
-                >
-                  {shortLabel(d.month)}
-                  {isStart && (
-                    <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 text-[7px] font-extrabold text-cyan-200 leading-none">
-                      INI
-                    </span>
-                  )}
-                  {isEnd && startIndex !== endIndex && (
-                    <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 text-[7px] font-extrabold text-cyan-200 leading-none">
-                      FIM
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Reset link */}
-          <button
-            onClick={() => { setStartIndex(0); setEndIndex(totalMonths - 1); setSelecting("start"); }}
-            className="text-[10px] text-muted-foreground/50 hover:text-cyan-400 transition-colors underline underline-offset-2"
-          >
-            Selecionar período completo
-          </button>
         </div>
 
-        {/* ── RIGHT: Range Cumulative Gauge ── */}
+        {/* RIGHT CARD: Cumulative Value Gauge vs OVERALL GOAL */}
         <div className="flex flex-col items-center justify-between p-4 rounded-xl bg-secondary/20 border border-border/40 h-full">
           <div className="text-center mb-2">
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Faturamento Acumulado</span>
             <h3 className="text-sm font-bold text-foreground mt-0.5">
-              {billingData[startIndex].month}
-              {startIndex !== endIndex && ` → ${billingData[endIndex].month}`}
+              {billingData[0].month} a {billingData[selectedIndex].month}
             </h3>
           </div>
-          {renderGauge(cumulativeNet, selectedTarget, "#10b981", "#10b981")}
+
+          {renderGauge(cumulativeNet, OVERALL_GOAL, ["#10b981", "#161e31"], "#10b981")}
+
           <div className="flex justify-between w-full px-8 text-[10px] font-semibold text-muted-foreground mt-2">
             <span>0%</span>
-            <span>Meta: {formatBRL(selectedTarget)}</span>
+            <span>Meta: {formatBRL(OVERALL_GOAL)}</span>
             <span>100%</span>
           </div>
         </div>
