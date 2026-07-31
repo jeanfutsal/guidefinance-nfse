@@ -49,19 +49,21 @@ export default async function DashboardPage() {
       <div className="p-6 space-y-6">
         {/* Empty state banner */}
         {stats.invoiceCount === 0 && (
-          <div className="glass-card rounded-xl p-6 border border-primary/20 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <FileText className="text-primary" size={24} />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-foreground">Nenhuma NFS-e cadastrada ainda</h3>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                Faça upload de PDFs de Notas Fiscais de Serviço para começar a visualizar os dados.
-              </p>
+          <div className="glass-card rounded-xl p-6 border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <FileText className="text-primary" size={24} />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Nenhuma NFS-e cadastrada ainda</h3>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Faça upload de PDFs de Notas Fiscais de Serviço para começar a visualizar os dados.
+                </p>
+              </div>
             </div>
             <Link
               href="/upload"
-              className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+              className="w-full sm:w-auto flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
             >
               Fazer Upload
               <ArrowRight size={14} />
@@ -70,7 +72,7 @@ export default async function DashboardPage() {
         )}
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Faturamento Total"
             value={formatBRL(stats.totalInvoiced)}

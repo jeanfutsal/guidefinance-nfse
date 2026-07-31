@@ -1,7 +1,8 @@
 "use client";
 
-import { Bell, Search, Sun, Moon } from "lucide-react";
+import { Bell, Search, Sun, Moon, Menu } from "lucide-react";
 import { useState } from "react";
+import { useSidebar } from "./SidebarContext";
 
 interface HeaderProps {
   title: string;
@@ -10,6 +11,7 @@ interface HeaderProps {
 
 export function Header({ title, subtitle }: HeaderProps) {
   const [dark, setDark] = useState(true);
+  const { toggleSidebar } = useSidebar();
 
   function toggleTheme() {
     const html = document.documentElement;
@@ -19,10 +21,19 @@ export function Header({ title, subtitle }: HeaderProps) {
 
   return (
     <header className="flex items-center justify-between px-6 py-4 border-b border-border bg-card/60 backdrop-blur-sm sticky top-0 z-10">
-      {/* Title */}
-      <div>
-        <h1 className="text-xl font-bold text-foreground">{title}</h1>
-        {subtitle && <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>}
+      {/* Title & Hamburger button */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={toggleSidebar}
+          className="md:hidden p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-all"
+          title="Alternar menu"
+        >
+          <Menu size={20} />
+        </button>
+        <div>
+          <h1 className="text-xl font-bold text-foreground">{title}</h1>
+          {subtitle && <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>}
+        </div>
       </div>
 
       {/* Actions */}
