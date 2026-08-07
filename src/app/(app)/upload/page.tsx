@@ -17,7 +17,7 @@ export default function UploadPage() {
           <div className="text-sm text-muted-foreground space-y-1">
             <p className="font-medium text-foreground">Formatos suportados</p>
             <p>
-              A extração é otimizada para o padrão <strong className="text-foreground">DANFSe v1.0</strong> (NFS-e Nacional) emitidas por municípios adotantes do padrão nacional.
+              A extração é otimizada para os padrões <strong className="text-foreground">DANFSe v1.0</strong> e <strong className="text-foreground">DANFSe v2.0</strong> (NFS-e Nacional) emitidas por municípios adotantes do padrão nacional.
               Dados extraídos automaticamente: Chave de Acesso, Emitente, Tomador, Valor do Serviço, Impostos (ISSQN, IRRF) e descrição do serviço.
             </p>
           </div>

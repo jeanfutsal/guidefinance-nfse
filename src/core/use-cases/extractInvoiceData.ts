@@ -76,28 +76,37 @@ export function extractInvoiceData(text: string): Omit<Invoice, "id"> {
   const issueDateMatch = text.match(/Data\s*e\s*Hora\s*da\s*emiss[ãa]o\s*da\s*NFS-e\s*\n\s*([\d/ :]+)/i);
   const issueDate = issueDateMatch ? parseBrDate(issueDateMatch[1]) : new Date().toISOString();
 
-  // 5. Blocos Emitente e Tomador (separados por TOMADOR DO SERVIÇO)
-  const blocks = text.split(/TOMADOR\s*DO\s*SERVI[ÇC]O/i);
+  // 5. Blocos Emitente e Tomador (separados por TOMADOR DO SERVIÇO ou TOMADOR / ADQUIRENTE)
+  const blocks = text.split(/(?:TOMADOR\s*DO\s*SERVI[ÇC]O|TOMADOR\s*[\/\\|]?\s*ADQUIRENTE)/i);
   const emitenteBlock = blocks[0] || "";
   const afterTomador = blocks[1] || "";
-  const tomadorBlock = afterTomador.split(/INTERMEDI[ÁA]RIO\s*DO\s*SERVI[ÇC]O/i)[0] || "";
+  // Suporta tanto INTERMEDIÁRIO DO SERVIÇO quanto INTERMEDIÁRIO DA OPERAÇÃO
+  const tomadorBlock = afterTomador.split(/INTERMEDI[ÁA]RIO\s*(?:DO\s*SERVI[ÇC]O|DA\s*OPERA[ÇC][AÃ]O)/i)[0] || "";
 
   // Emitente CNPJ
   const emitenteCnpjMatch = emitenteBlock.match(/CNPJ\s*[\/\\|]\s*CPF\s*[\/\\|]\s*NIF\s*\n\s*([\d./-]+)/i);
   const emitenteCnpj = emitenteCnpjMatch ? emitenteCnpjMatch[1] : "";
 
+  // Dividir o bloco do emitente para ignorar o cabeçalho do documento (que pode conter município genérico)
+  let emitenteSubBlock = emitenteBlock;
+  if (/PRESTADOR\s*[\/\\|]?\s*FORNECEDOR/i.test(emitenteBlock)) {
+    emitenteSubBlock = emitenteBlock.split(/PRESTADOR\s*[\/\\|]?\s*FORNECEDOR/i)[1];
+  } else if (/EMITENTE\s*DA\s*NFS-e/i.test(emitenteBlock)) {
+    emitenteSubBlock = emitenteBlock.split(/EMITENTE\s*DA\s*NFS-e/i)[1];
+  }
+
   // Emitente Nome
-  const emitenteNameMatch = emitenteBlock.match(/Nome\s*[\/\\|]\s*Nome\s*Empresarial\s*\n\s*([^\n]+)/i);
+  const emitenteNameMatch = emitenteSubBlock.match(/Nome\s*[\/\\|]\s*Nome\s*Empresarial\s*\n\s*([^\n]+)/i);
   let emitenteName = emitenteNameMatch ? emitenteNameMatch[1].trim() : "";
   // Limpar CNPJ ou prefixo numérico grudado no nome
   emitenteName = emitenteName.replace(/^[\d./-]+\s*/, "");
 
-  // Emitente Cidade/UF
-  const emitenteCityMatch = emitenteBlock.match(/Munic[íi]pio\s*\n\s*([^\n]+)/i);
+  // Emitente Cidade/UF (Suporta Município ou Município / Sigla UF)
+  const emitenteCityMatch = emitenteSubBlock.match(/Munic[íi]pio(?:[^\n]*)\n\s*([^\n]+)/i);
   let emitenteCity = "";
   let emitenteState = "";
   if (emitenteCityMatch) {
-    const parts = emitenteCityMatch[1].split("-");
+    const parts = emitenteCityMatch[1].split(/[-/]/);
     emitenteCity = parts[0]?.trim() || "";
     emitenteState = parts[1]?.trim() || "";
   }
@@ -111,26 +120,26 @@ export function extractInvoiceData(text: string): Omit<Invoice, "id"> {
   let tomadorName = tomadorNameMatch ? tomadorNameMatch[1].trim() : "";
   tomadorName = tomadorName.replace(/^[\d./-]+\s*/, "");
 
-  // Tomador Cidade/UF
-  const tomadorCityMatch = tomadorBlock.match(/Munic[íi]pio\s*\n\s*([^\n]+)/i);
+  // Tomador Cidade/UF (Suporta Município ou Município / Sigla UF)
+  const tomadorCityMatch = tomadorBlock.match(/Munic[íi]pio(?:[^\n]*)\n\s*([^\n]+)/i);
   let tomadorCity = "";
   let tomadorState = "";
   if (tomadorCityMatch) {
-    const parts = tomadorCityMatch[1].split("-");
+    const parts = tomadorCityMatch[1].split(/[-/]/);
     tomadorCity = parts[0]?.trim() || "";
     tomadorState = parts[1]?.trim() || "";
   }
 
-  // 6. Serviço
-  const serviceCodeMatch = text.match(/C[oó]digo\s*de\s*Tributa[çc][aã]o\s*Nacional\s*\n\s*([^\n]+)/i);
+  // 6. Serviço (Suporta Código de Tributação Nacional e Código de Tributação Nacional/Municipal)
+  const serviceCodeMatch = text.match(/C[oó]digo\s*de\s*Tributa[çc][aã]o\s*Nacional(?:[^\n]*)\n\s*([^\n]+)/i);
   const serviceCode = serviceCodeMatch ? serviceCodeMatch[1].trim() : "";
 
   // Descrição do Serviço
-  const serviceDescMatch = text.match(/Descri[çc][aã]o\s*do\s*Servi[çc]o\s*\n([\s\S]*?)(?=\n\s*TRIBUTA[ÇC][AÃ]O\s*MUNICIPAL|\n\s*Valor\s*do\s*Servi[çc]o)/i);
+  const serviceDescMatch = text.match(/Descri[çc][aã]o\s*do\s*Servi[çc]o\s*\n([\s\S]*?)(?=\n\s*TRIBUTA[ÇC][AÃ]O\s*MUNICIPAL|\n\s*Valor\s*do\s*Servi[çc]o|\n\s*TRIBUTA[ÇC][AÃ]O\s*MUNICIPAL\s*\(ISSQN\))/i);
   const serviceDescription = serviceDescMatch ? serviceDescMatch[1].trim() : "";
 
-  // 7. Valores e Impostos
-  const serviceValueMatch = text.match(/Valor\s*do\s*Servi[çc]o\s*\n\s*(R\$\s*[\d.,]+|[\d.,]+)/i);
+  // 7. Valores e Impostos (Suporta Valor do Serviço e Valor da Operação / Serviço)
+  const serviceValueMatch = text.match(/(?:Valor\s*do\s*Servi[çc]o|Valor\s*da\s*Opera[çc][aã]o\s*[\/\\|]?\s*Servi[çc]o)\s*\n\s*(R\$\s*[\d.,]+|[\d.,]+)/i);
   const serviceValue = serviceValueMatch ? parseBrValue(serviceValueMatch[1]) : 0;
 
   const liquidValueMatch = text.match(/Valor\s*L[íi]quido\s*da\s*NFS-e\s*\n\s*(R\$\s*[\d.,]+|[\d.,]+)/i);
@@ -146,9 +155,13 @@ export function extractInvoiceData(text: string): Omit<Invoice, "id"> {
     issqnRate = parseBrValue(rateStr);
   }
 
-  // ISSQN Retido
+  // ISSQN Retido (limpa espaços para evitar erros com "Não Retido" vs "NãoRetido")
   const issqnRetainedMatch = text.match(/Reten[çc][aã]o\s*do\s*ISSQN\s*\n\s*([^\n]+)/i);
-  const issqnRetained = issqnRetainedMatch ? issqnRetainedMatch[1].includes("Retido") && !issqnRetainedMatch[1].includes("Não Retido") : false;
+  let issqnRetained = false;
+  if (issqnRetainedMatch) {
+    const cleanRetained = issqnRetainedMatch[1].replace(/\s/g, "");
+    issqnRetained = cleanRetained.includes("Retido") && !cleanRetained.includes("NãoRetido");
+  }
 
   // Retenções Federais
   const irrfMatch = text.match(/IRRF\s*\n\s*(R\$\s*[\d.,]+|[\d.,]+)/i);
