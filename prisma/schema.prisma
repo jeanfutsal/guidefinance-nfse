@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,42 +7,146 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Models from Better Auth (auth)
+model User {
+  id            String    @id @default(uuid())
+  name          String?
+  email         String?   @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          String    @default("user")
+  banned        Boolean?  @default(false)
+  banReason     String?
+  banExpires    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Account {
+  id                 String   @id @default(uuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId          String?
+  providerId         String?
+  providerAccountId  String?
+  provider           String?
+  type               String?
+  idToken            String?   @db.Text
+  accessToken        String?   @db.Text
+  refreshToken       String?   @db.Text
+  accessTokenExpiresAt DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope              String?
+  password           String?   @db.Text
+  createdAt          DateTime
+  updatedAt          DateTime
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt    DateTime?
+  token        String?   @unique
+  sessionToken String?   @unique
+  accessToken  String?   @unique
+  expires      DateTime?
+  createdAt    DateTime
+  updatedAt    DateTime
+  ipAddress    String?
+  userAgent    String?
+  impersonatedBy String?
+}
+
+model Verification {
+  id           String   @id @default(uuid())
+  identifier   String
+  value        String
+  expiresAt    DateTime
+  createdAt    DateTime
+  updatedAt    DateTime
+  @@unique([id])
+}
+
+// Models from Fase 2.2 - Cadastro de Clientes e Fornecedores
+
+model Client {
+  id           String    @id @default(uuid())
+  cnpj         String    @unique // CPF ou CNPJ do tomador
+  razaoSocial  String
+  nomeFantasia String?
+  email        String?
+  phone        String?
+  city         String?
+  state        String?
+  observacao   String?
+  invoices     Invoice[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([razaoSocial])
+}
+
+model Supplier {
+  id           String    @id @default(uuid())
+  cnpj         String    @unique // CPF ou CNPJ do emitente
+  razaoSocial  String
+  nomeFantasia String?
+  email        String?
+  phone        String?
+  city         String?
+  state        String?
+  observacao   String?
+  invoices     Invoice[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([razaoSocial])
+}
+
+// Invoice model (existing) with optional FK to Client and Supplier
 
 model Invoice {
-  id                 String   @id @default(uuid())
-  accessKey          String   @unique // Chave de acesso de 50 dígitos
-  number             String   // Número da NFS-e
-  issueDate          DateTime // Data e hora da emissão
-  competenceDate     String   // Competência da NFS-e
-  
+  id                 String    @id @default(uuid())
+  accessKey          String    @unique // Chave de acesso de 50 digitos
+  number             String // Numero da NFS-e
+  issueDate          DateTime // Data e hora da emissao
+  competenceDate     String // Competencia da NFS-e
   // Emitente (Prestador)
   emitenteCnpj       String
   emitenteName       String
   emitenteCity       String
   emitenteState      String
-  
   // Tomador (Cliente)
   tomadorCnpj        String
   tomadorName        String
   tomadorCity        String
   tomadorState       String
-  
-  // Serviço
+  // Servico
   serviceCode        String
-  serviceDescription String   // Descrição do serviço
-  
+  serviceDescription String // Descricao do servico
   // Valores e Impostos
-  serviceValue       Float    // Valor do Serviço (Bruto)
-  liquidValue        Float    // Valor Líquido
-  issqnValue         Float    @default(0.0) // Valor do ISSQN
-  issqnRate          Float    @default(0.0) // Alíquota ISSQN (%)
-  issqnRetained      Boolean  @default(false)
-  federalRetentions  Float    @default(0.0) // Retenções Federais (IRRF, CSLL, PIS, COFINS)
-  
+  serviceValue       Float // Valor do Servico (Bruto)
+  liquidValue        Float // Valor Liquido
+  issqnValue         Float     @default(0.0) // Valor do ISSQN
+  issqnRate          Float     @default(0.0) // Aliquota ISSQN (%)
+  issqnRetained      Boolean   @default(false) // Valor do ISSQN
+  federalRetentions  Float     @default(0.0) // Retencoes Federais (IRRF, CSLL, PIS, COFINS)
+  // Vinculos opcionais com cadastros (Fase 2.2)
+  clientId           String?
+  client             Client?   @relation(fields: [clientId], references: [id])
+  supplierId         String?
+  supplier           Supplier? @relation(fields: [supplierId], references: [id])
+
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
   @@index([issueDate])
   @@index([emitenteCnpj])
   @@index([tomadorCnpj])
+  @@index([clientId])
+  @@index([supplierId])
 }

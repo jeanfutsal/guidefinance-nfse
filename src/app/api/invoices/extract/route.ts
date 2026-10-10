@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractInvoiceData } from "@/core/use-cases/extractInvoiceData";
+import { getSession } from "@/lib/session";
 
 export const runtime = "nodejs";
 
 const pdfParse = require("pdf-parse");
 
 export async function POST(request: NextRequest) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
