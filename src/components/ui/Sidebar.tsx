@@ -12,8 +12,10 @@ import {
   ChevronRight,
   Zap,
   X,
+  Shield,
 } from "lucide-react";
 import { useSidebar } from "./SidebarContext";
+import { authClient } from "@/lib/auth-client";
 
 const navItems = [
   { href: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -22,10 +24,17 @@ const navItems = [
   { href: "/relatorios", icon: BarChart3, label: "Relatórios" },
 ];
 
+// Item exibido apenas para usuários com papel admin
+const adminNavItem = { href: "/admin", icon: Shield, label: "Administração" };
+
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const { isMobileOpen, closeSidebar } = useSidebar();
+  const { data: session } = authClient.useSession();
+  const isAdmin = (session?.user as { role?: string } | undefined)?.role === "admin";
+
+  const items = isAdmin ? [...navItems, adminNavItem] : navItems;
 
   return (
     <>
@@ -63,13 +72,13 @@ export function Sidebar() {
             className="md:hidden p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-all"
             title="Fechar menu"
           >
-            <X size={16} />
+            <X size={20} />
           </button>
         </div>
 
         {/* Nav items */}
         <nav className="flex-1 px-2 py-4 space-y-1">
-          {navItems.map(({ href, icon: Icon, label }) => {
+          {items.map(({ href, icon: Icon, label }) => {
             const isActive = pathname === href;
             return (
               <Link
