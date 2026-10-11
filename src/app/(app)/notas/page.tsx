@@ -7,7 +7,8 @@ import {
   Search,
   Filter,
   Download,
-  Trash2,
+  Archive,
+  ArchiveRestore,
   Eye,
   ChevronLeft,
   ChevronRight,
@@ -124,12 +125,14 @@ export default function NotasPage() {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [page, setPage] = useState(1);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (search) params.set("searchValue", search);
+      if (showArchived) params.set("archived", "1");
       const res = await fetch(`/api/invoices?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
@@ -141,18 +144,25 @@ export default function NotasPage() {
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [search, showArchived]);
 
   useEffect(() => {
     const timeout = setTimeout(fetchInvoices, 300);
     return () => clearTimeout(timeout);
   }, [fetchInvoices]);
 
-  async function handleDelete(id: string) {
-    if (!confirm("Excluir esta nota fiscal? Esta ação não pode ser desfeita.")) return;
+  async function handleArchive(id: string, archived: boolean) {
+    const message = archived
+      ? "Arquivar esta nota fiscal? Ela ficará oculta da listagem e do dashboard, mas poderá ser restaurada depois."
+      : "Restaurar esta nota fiscal para a listagem principal?";
+    if (!confirm(message)) return;
     setDeleting(id);
     try {
-      const res = await fetch(`/api/invoices?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/invoices`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, archived }),
+      });
       if (res.ok) setInvoices((prev) => prev.filter((inv) => inv.id !== id));
     } finally {
       setDeleting(null);
@@ -207,6 +217,16 @@ export default function NotasPage() {
             <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground text-sm transition-all border border-border">
               <Filter size={14} /> Filtros
             </button>
+            <button
+              onClick={() => setShowArchived((v) => !v)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all border ${
+                showArchived
+                  ? "bg-primary/10 text-primary border-primary/20"
+                  : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
+              }`}
+            >
+              <Archive size={14} /> {showArchived ? "Ver ativas" : "Arquivadas"}
+            </button>
             {invoices.length > 0 && (
               <button onClick={exportCSV} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all">
                 <Download size={14} /> Exportar CSV
@@ -225,11 +245,15 @@ export default function NotasPage() {
           ) : invoices.length === 0 ? (
             <div className="glass-card rounded-xl border border-border p-12 text-center">
               <FileText size={40} className="text-muted-foreground mx-auto mb-3" />
-              <p className="text-foreground font-medium">Nenhuma nota fiscal encontrada</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {search ? "Tente outra busca ou " : ""}
-                <Link href="/upload" className="text-primary hover:underline">faça upload de PDFs</Link>
+              <p className="text-foreground font-medium">
+                {showArchived ? "Nenhuma nota arquivada" : "Nenhuma nota fiscal encontrada"}
               </p>
+              {!showArchived && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {search ? "Tente outra busca ou " : ""}
+                  <Link href="/upload" className="text-primary hover:underline">faça upload de PDFs</Link>
+                </p>
+              )}
             </div>
           ) : (
             <div className="glass-card rounded-xl border border-border overflow-hidden">
@@ -247,7 +271,14 @@ export default function NotasPage() {
                   <tbody className="divide-y divide-border">
                     {paginated.map((inv) => (
                       <tr key={inv.id} className="hover:bg-secondary/30 transition-colors group">
-                        <td className="px-4 py-3 font-medium text-foreground whitespace-nowrap">#{inv.number}</td>
+                        <td className="px-4 py-3 font-medium text-foreground whitespace-nowrap">
+                          #{inv.number}
+                          {inv.archived && (
+                            <span className="ml-2 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 align-middle">
+                              Arquivada
+                            </span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{formatDate(inv.issueDate)}</td>
                         <td className="px-4 py-3 max-w-36 truncate" title={inv.emitenteName}>
                           <span className="text-foreground">{inv.emitenteName}</span>
@@ -271,14 +302,25 @@ export default function NotasPage() {
                             >
                               <Eye size={14} />
                             </button>
-                            <button
-                              onClick={() => handleDelete(inv.id!)}
-                              disabled={deleting === inv.id}
-                              className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-rose-500/10 text-muted-foreground hover:text-rose-400 transition-all"
-                              title="Excluir nota"
-                            >
-                              <Trash2 size={14} />
-                            </button>
+                            {showArchived ? (
+                              <button
+                                onClick={() => handleArchive(inv.id!, false)}
+                                disabled={deleting === inv.id}
+                                className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-emerald-500/10 text-muted-foreground hover:text-emerald-400 transition-all"
+                                title="Restaurar nota"
+                              >
+                                <ArchiveRestore size={14} />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleArchive(inv.id!, true)}
+                                disabled={deleting === inv.id}
+                                className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-amber-500/10 text-muted-foreground hover:text-amber-400 transition-all"
+                                title="Arquivar nota"
+                              >
+                                <Archive size={14} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

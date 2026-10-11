@@ -135,6 +135,8 @@ model Invoice {
   issqnRate          Float     @default(0.0) // Aliquota ISSQN (%)
   issqnRetained      Boolean   @default(false) // Valor do ISSQN
   federalRetentions  Float     @default(0.0) // Retencoes Federais (IRRF, CSLL, PIS, COFINS)
+  // Arquivamento (soft-delete) - Fase 2.2 item 12
+  archived           Boolean   @default(false)
   // Vinculos opcionais com cadastros (Fase 2.2)
   clientId           String?
   client             Client?   @relation(fields: [clientId], references: [id])
@@ -149,4 +151,5 @@ model Invoice {
   @@index([tomadorCnpj])
   @@index([clientId])
   @@index([supplierId])
+  @@index([archived])
 }

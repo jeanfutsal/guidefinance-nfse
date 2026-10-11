@@ -8,6 +8,8 @@ export interface InvoiceFilters {
   searchValue?: string; // Busca textual global (chave, nome, etc.)
   minValue?: number;
   maxValue?: number;
+  /** true = retorna apenas arquivadas; ausente/false = retorna apenas não arquivadas */
+  archived?: boolean;
 }
 
 export interface InvoiceRepository {
@@ -35,6 +37,12 @@ export interface InvoiceRepository {
    * Exclui uma nota fiscal pelo ID
    */
   delete(id: string): Promise<boolean>;
+
+  /**
+   * Arquiva ou restaura uma nota fiscal (soft-delete).
+   * Notas arquivadas ficam ocultas do dashboard e da listagem padrão.
+   */
+  setArchived(id: string, archived: boolean): Promise<boolean>;
 
   /**
    * Calcula as estatísticas consolidadas para o dashboard financeiro

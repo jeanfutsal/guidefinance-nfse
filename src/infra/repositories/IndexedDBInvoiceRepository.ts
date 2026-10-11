@@ -126,6 +126,16 @@ export class IndexedDBInvoiceRepository implements InvoiceRepository {
     return false;
   }
 
+  async setArchived(id: string, archived: boolean): Promise<boolean> {
+    const list = await this.getList();
+    const index = list.findIndex((item) => item.id === id);
+    if (index === -1) return false;
+
+    list[index] = { ...list[index], archived };
+    await this.saveList(list);
+    return true;
+  }
+
   async getStats(filters?: InvoiceFilters): Promise<DashboardStats> {
     const invoices = await this.findAll(filters);
     
