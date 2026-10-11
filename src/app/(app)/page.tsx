@@ -1,5 +1,6 @@
 import { Header } from "@/components/ui/Header";
 import { StatCard } from "@/components/ui/StatCard";
+import { getRole } from "@/lib/permissions";
 import { BillingAreaChart, ClientsBarChart, DistributionPieChart } from "@/components/charts/InvoiceCharts";
 import { InvoiceRepositoryProvider } from "@/infra/repositories/InvoiceRepositoryProvider";
 import {
@@ -20,6 +21,8 @@ export const revalidate = 0;
 
 export default async function DashboardPage() {
   const repository = InvoiceRepositoryProvider.getServerRepository();
+  // Item 13: upload é exclusivo de admin — esconde o CTA para usuários comuns
+  const canUpload = (await getRole()) === "admin";
   
   let stats;
   try {
@@ -61,13 +64,15 @@ export default async function DashboardPage() {
                 </p>
               </div>
             </div>
-            <Link
-              href="/upload"
-              className="w-full sm:w-auto flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
-            >
-              Fazer Upload
-              <ArrowRight size={14} />
-            </Link>
+            {canUpload && (
+              <Link
+                href="/upload"
+                className="w-full sm:w-auto flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                Fazer Upload
+                <ArrowRight size={14} />
+              </Link>
+            )}
           </div>
         )}
 

@@ -1,8 +1,12 @@
 import { Header } from "@/components/ui/Header";
 import { UploadZone } from "@/components/invoice/UploadZone";
+import { requireAdmin } from "@/lib/permissions";
 import { FileText, Info } from "lucide-react";
 
-export default function UploadPage() {
+export default async function UploadPage() {
+  // Upload de NFS-e é exclusivo de administradores (item 13)
+  await requireAdmin();
+
   return (
     <div>
       <Header

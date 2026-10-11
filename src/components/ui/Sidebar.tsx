@@ -17,12 +17,7 @@ import {
 import { useSidebar } from "./SidebarContext";
 import { authClient } from "@/lib/auth-client";
 
-const navItems = [
-  { href: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/upload", icon: Upload, label: "Upload NFS-e" },
-  { href: "/notas", icon: FileText, label: "Notas Fiscais" },
-  { href: "/relatorios", icon: BarChart3, label: "Relatórios" },
-];
+
 
 // Item exibido apenas para usuários com papel admin
 const adminNavItem = { href: "/admin", icon: Shield, label: "Administração" };
@@ -34,7 +29,14 @@ export function Sidebar() {
   const { data: session } = authClient.useSession();
   const isAdmin = (session?.user as { role?: string } | undefined)?.role === "admin";
 
-  const items = isAdmin ? [...navItems, adminNavItem] : navItems;
+  // Upload e Administração são exclusivos de admin (item 13)
+  const items = [
+    { href: "/", icon: LayoutDashboard, label: "Dashboard" },
+    ...(isAdmin ? [{ href: "/upload", icon: Upload, label: "Upload NFS-e" }] : []),
+    { href: "/notas", icon: FileText, label: "Notas Fiscais" },
+    { href: "/relatorios", icon: BarChart3, label: "Relatórios" },
+    ...(isAdmin ? [adminNavItem] : []),
+  ];
 
   return (
     <>
