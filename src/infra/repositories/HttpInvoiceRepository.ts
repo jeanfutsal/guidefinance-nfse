@@ -52,6 +52,17 @@ export class HttpInvoiceRepository implements InvoiceRepository {
     return !!result.success;
   }
 
+  async setArchived(id: string, archived: boolean): Promise<boolean> {
+    const res = await fetch(`/api/invoices`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, archived }),
+    });
+    if (!res.ok) return false;
+    const result = await res.json();
+    return !!result.success;
+  }
+
   async getStats(filters?: InvoiceFilters): Promise<DashboardStats> {
     const params = new URLSearchParams();
     if (filters) {

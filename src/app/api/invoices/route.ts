@@ -26,6 +26,8 @@ export async function GET(request: NextRequest) {
       maxValue: searchParams.get("maxValue")
         ? Number(searchParams.get("maxValue"))
         : undefined,
+      // ?archived=1 retorna apenas as arquivadas; ausente retorna as ativas
+      archived: searchParams.get("archived") === "1" ? true : undefined,
     };
 
     const invoices = await repository.findAll(filters);
@@ -97,6 +99,44 @@ export async function POST(request: NextRequest) {
       {
         error: "Erro ao registrar nota fiscal: " + error.message,
       },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+  }
+  if (session.user.role !== "admin") {
+    return NextResponse.json({ error: "Acesso restrito a administradores." }, { status: 403 });
+  }
+
+  try {
+    const body = await request.json();
+    const { id, archived } = body;
+
+    if (!id || typeof archived !== "boolean") {
+      return NextResponse.json(
+        { error: "Dados obrigatórios: id e archived (boolean)." },
+        { status: 400 }
+      );
+    }
+
+    const success = await repository.setArchived(id, archived);
+    if (!success) {
+      return NextResponse.json(
+        { error: "Nota fiscal não encontrada." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ success: true, archived });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Erro desconhecido";
+    return NextResponse.json(
+      { error: "Erro ao arquivar nota fiscal: " + msg },
       { status: 500 }
     );
   }

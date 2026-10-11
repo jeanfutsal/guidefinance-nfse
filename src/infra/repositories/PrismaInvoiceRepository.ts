@@ -25,6 +25,7 @@ export class PrismaInvoiceRepository implements InvoiceRepository {
       issqnRate: invoice.issqnRate,
       issqnRetained: invoice.issqnRetained,
       federalRetentions: invoice.federalRetentions,
+      archived: invoice.archived ?? false,
     };
 
     let result;
@@ -73,6 +74,18 @@ export class PrismaInvoiceRepository implements InvoiceRepository {
     try {
       await prisma.invoice.delete({
         where: { id },
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async setArchived(id: string, archived: boolean): Promise<boolean> {
+    try {
+      await prisma.invoice.update({
+        where: { id },
+        data: { archived },
       });
       return true;
     } catch {
@@ -168,9 +181,19 @@ export class PrismaInvoiceRepository implements InvoiceRepository {
   // --- Auxiliares ---
 
   private buildWhereClause(filters?: InvoiceFilters) {
-    if (!filters) return {};
-
     const conditions: any[] = [];
+
+    // Arquivamento (soft-delete): exclui arquivadas por padrão;
+    // filters.archived === true retorna apenas as arquivadas
+    if (filters?.archived === true) {
+      conditions.push({ archived: true });
+    } else {
+      conditions.push({ archived: false });
+    }
+
+    if (!filters) {
+      return { AND: conditions };
+    }
 
     // Filtro de Data
     if (filters.startDate || filters.endDate) {
@@ -243,6 +266,7 @@ export class PrismaInvoiceRepository implements InvoiceRepository {
       issqnRate: dbInvoice.issqnRate,
       issqnRetained: dbInvoice.issqnRetained,
       federalRetentions: dbInvoice.federalRetentions,
+      archived: dbInvoice.archived ?? false,
       createdAt: dbInvoice.createdAt.toISOString(),
       updatedAt: dbInvoice.updatedAt.toISOString(),
     };

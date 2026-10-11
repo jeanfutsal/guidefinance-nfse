@@ -29,6 +29,9 @@ export interface Invoice {
   issqnRetained: boolean;    // Indica se o ISSQN foi retido
   federalRetentions: number; // Somatória de IRRF, CSLL, PIS, COFINS retidos
   
+  // Arquivamento (soft-delete) — notas arquivadas ficam ocultas do dashboard
+  archived?: boolean;
+
   createdAt?: string;
   updatedAt?: string;
 }
