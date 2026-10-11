@@ -11,6 +11,9 @@ export async function POST(request: NextRequest) {
   if (!session) {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   }
+  if (session.user.role !== "admin") {
+    return NextResponse.json({ error: "Acesso restrito a administradores." }, { status: 403 });
+  }
 
   try {
     const formData = await request.formData();

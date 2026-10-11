@@ -17,6 +17,7 @@ import {
   Upload,
 } from "lucide-react";
 import Link from "next/link";
+import { authClient } from "@/lib/auth-client";
 
 function formatBRL(v: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -126,6 +127,9 @@ export default function NotasPage() {
   const [page, setPage] = useState(1);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  // Item 13: upload é exclusivo de admin
+  const { data: session } = authClient.useSession();
+  const isAdmin = (session?.user as { role?: string } | undefined)?.role === "admin";
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
@@ -232,9 +236,11 @@ export default function NotasPage() {
                 <Download size={14} /> Exportar CSV
               </button>
             )}
-            <Link href="/upload" className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm hover:opacity-90 transition-opacity">
-              <Upload size={14} /> Upload
-            </Link>
+            {isAdmin && (
+              <Link href="/upload" className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm hover:opacity-90 transition-opacity">
+                <Upload size={14} /> Upload
+              </Link>
+            )}
           </div>
 
           {/* Table */}
@@ -250,8 +256,14 @@ export default function NotasPage() {
               </p>
               {!showArchived && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  {search ? "Tente outra busca ou " : ""}
-                  <Link href="/upload" className="text-primary hover:underline">faça upload de PDFs</Link>
+                  {isAdmin ? (
+                    <>
+                      {search ? "Tente outra busca ou " : ""}
+                      <Link href="/upload" className="text-primary hover:underline">faça upload de PDFs</Link>
+                    </>
+                  ) : search ? (
+                    "Tente outra busca."
+                  ) : null}
                 </p>
               )}
             </div>
