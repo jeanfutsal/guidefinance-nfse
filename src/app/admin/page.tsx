@@ -1,6 +1,6 @@
 import { Header } from "@/components/ui/Header";
 import { requireAdmin } from "@/lib/permissions";
-import { ShieldCheck, Users, Building2, FileText } from "lucide-react";
+import { ShieldCheck, Users, Building2, FileText, UserCog } from "lucide-react";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +9,14 @@ export default async function AdminPage() {
   await requireAdmin();
 
   const cards = [
+    {
+      href: "/admin/usuarios",
+      icon: UserCog,
+      title: "Usuários",
+      desc: "Contas, papéis e acessos",
+      color: "text-amber-400 bg-amber-500/10",
+    },
+
     {
       href: "/admin/fornecedores",
       icon: Building2,
@@ -52,7 +60,7 @@ export default async function AdminPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {cards.map(({ href, icon: Icon, title, desc, color }) => (
             <Link
               key={href}
