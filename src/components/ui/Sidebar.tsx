@@ -13,6 +13,7 @@ import {
   Zap,
   X,
   Shield,
+  Users,
 } from "lucide-react";
 import { useSidebar } from "./SidebarContext";
 import { authClient } from "@/lib/auth-client";
@@ -21,6 +22,7 @@ import { authClient } from "@/lib/auth-client";
 
 // Item exibido apenas para usuários com papel admin
 const adminNavItem = { href: "/admin", icon: Shield, label: "Administração" };
+const usersNavItem = { href: "/admin/usuarios", icon: Users, label: "Usuários" };
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
@@ -35,7 +37,7 @@ export function Sidebar() {
     ...(isAdmin ? [{ href: "/upload", icon: Upload, label: "Upload NFS-e" }] : []),
     { href: "/notas", icon: FileText, label: "Notas Fiscais" },
     { href: "/relatorios", icon: BarChart3, label: "Relatórios" },
-    ...(isAdmin ? [adminNavItem] : []),
+    ...(isAdmin ? [adminNavItem, usersNavItem] : []),
   ];
 
   return (
