@@ -1,11 +1,12 @@
 "use client";
 
-import { Bell, Sun, Moon, Menu, LogOut, Shield, User, ChevronDown } from "lucide-react";
+import { Sun, Moon, Menu, LogOut, Shield, User, ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSidebar } from "./SidebarContext";
 import { GlobalSearch } from "./GlobalSearch";
+import { NotificationsBell } from "./NotificationsBell";
 import { authClient } from "@/lib/auth-client";
 
 interface HeaderProps {
@@ -116,9 +117,7 @@ export function Header({ title, subtitle }: HeaderProps) {
         </button>
 
         {/* Notifications */}
-        <button className="relative w-8 h-8 flex items-center justify-center rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-all">
-          <Bell size={16} />
-        </button>
+        <NotificationsBell />
 
         {/* Avatar + dropdown */}
         <div className="relative" ref={menuRef}>
