@@ -1,6 +1,6 @@
 import { Header } from "@/components/ui/Header";
 import { requireAdmin } from "@/lib/permissions";
-import { ShieldCheck, Users, Building2, FileText, UserCog } from "lucide-react";
+import { ShieldCheck, Users, Building2, FileText, UserCog, Workflow, LifeBuoy } from "lucide-react";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -25,11 +25,25 @@ export default async function AdminPage() {
       color: "text-cyan-400 bg-cyan-500/10",
     },
     {
-      href: "/admin/clientes",
+      href: "/admin/clients",
       icon: Users,
       title: "Clientes (Tomadores)",
       desc: "Cadastro de tomadores de serviço",
       color: "text-indigo-400 bg-indigo-500/10",
+    },
+    {
+      href: "/admin/processos",
+      icon: Workflow,
+      title: "Processos",
+      desc: "Acompanhamento com timeline de etapas",
+      color: "text-violet-400 bg-violet-500/10",
+    },
+    {
+      href: "/admin/tickets",
+      icon: LifeBuoy,
+      title: "Tickets",
+      desc: "Chamados dos usuários e respostas",
+      color: "text-rose-400 bg-rose-500/10",
     },
     {
       href: "/notas",

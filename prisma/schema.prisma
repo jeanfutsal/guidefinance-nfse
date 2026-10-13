@@ -22,6 +22,7 @@ model User {
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
   sessions      Session[]
+  tickets       Ticket[] // Fase 2.3
 }
 
 model Account {
@@ -84,6 +85,7 @@ model Client {
   state        String?
   observacao   String?
   invoices     Invoice[]
+  processes    Process[] // Fase 2.3
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -101,6 +103,7 @@ model Supplier {
   state        String?
   observacao   String?
   invoices     Invoice[]
+  processes    Process[] // Fase 2.3
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -152,4 +155,63 @@ model Invoice {
   @@index([clientId])
   @@index([supplierId])
   @@index([archived])
+}
+
+// Models from Fase 2.3 - Processos (acompanhamento), etapas da timeline e Tickets
+
+model Process {
+  id          String        @id @default(uuid())
+  title       String
+  description String?
+  status      String        @default("aberto") // aberto | em_andamento | aguardando | concluido | cancelado
+  // Vinculos opcionais com cadastros
+  clientId    String?
+  client      Client?       @relation(fields: [clientId], references: [id])
+  supplierId  String?
+  supplier    Supplier?     @relation(fields: [supplierId], references: [id])
+  // Relacoes
+  steps       ProcessStep[]
+  tickets     Ticket[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status])
+  @@index([clientId])
+  @@index([supplierId])
+}
+
+model ProcessStep {
+  id          String   @id @default(uuid())
+  processId   String
+  process     Process  @relation(fields: [processId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  color       String   @default("#6366f1") // cor do bullet na timeline
+  date        DateTime // data do evento exibida na timeline
+  createdAt   DateTime @default(now())
+
+  @@index([processId])
+}
+
+model Ticket {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  status      String   @default("aberto") // aberto | em_andamento | respondido | fechado
+  priority    String   @default("media") // baixa | media | alta
+  // Quem abriu o chamado
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Vinculo opcional com um processo
+  processId   String?
+  process     Process? @relation(fields: [processId], references: [id], onDelete: SetNull)
+  // Resposta do administrador
+  response    String?
+  respondedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([userId])
+  @@index([processId])
 }
