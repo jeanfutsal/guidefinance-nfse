@@ -14,6 +14,7 @@ import {
   X,
   Shield,
   Users,
+  LifeBuoy,
 } from "lucide-react";
 import { useSidebar } from "./SidebarContext";
 import { authClient } from "@/lib/auth-client";
@@ -36,6 +37,7 @@ export function Sidebar() {
     { href: "/", icon: LayoutDashboard, label: "Dashboard" },
     ...(isAdmin ? [{ href: "/upload", icon: Upload, label: "Upload NFS-e" }] : []),
     { href: "/notas", icon: FileText, label: "Notas Fiscais" },
+    { href: "/tickets", icon: LifeBuoy, label: "Tickets" },
     { href: "/relatorios", icon: BarChart3, label: "Relatórios" },
     ...(isAdmin ? [adminNavItem, usersNavItem] : []),
   ];
