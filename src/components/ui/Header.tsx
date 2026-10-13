@@ -1,10 +1,11 @@
 "use client";
 
-import { Bell, Search, Sun, Moon, Menu, LogOut, Shield, User, ChevronDown } from "lucide-react";
+import { Bell, Sun, Moon, Menu, LogOut, Shield, User, ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSidebar } from "./SidebarContext";
+import { GlobalSearch } from "./GlobalSearch";
 import { authClient } from "@/lib/auth-client";
 
 interface HeaderProps {
@@ -36,10 +37,26 @@ export function Header({ title, subtitle }: HeaderProps) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [menuOpen]);
 
+  // Sincroniza com o tema aplicado antes da hidratação pelo script do layout
+  useEffect(() => {
+    const t = setTimeout(
+      () => setDark(document.documentElement.classList.contains("dark")),
+      0
+    );
+    return () => clearTimeout(t);
+  }, []);
+
   function toggleTheme() {
     const html = document.documentElement;
-    html.classList.toggle("dark");
-    setDark(!dark);
+    const isDark = !html.classList.contains("dark");
+    html.classList.toggle("dark", isDark);
+    html.style.colorScheme = isDark ? "dark" : "light";
+    try {
+      localStorage.setItem("gf-theme", isDark ? "dark" : "light");
+    } catch {
+      // localStorage indisponível — tema vale só para a sessão
+    }
+    setDark(isDark);
   }
 
   async function handleSignOut() {
@@ -86,11 +103,8 @@ export function Header({ title, subtitle }: HeaderProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-2">
-        {/* Search */}
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg glass-input text-sm text-muted-foreground w-48 cursor-pointer hover:text-foreground transition-colors">
-          <Search size={14} />
-          <span>Buscar nota…</span>
-        </div>
+        {/* Busca global */}
+        <GlobalSearch isAdmin={isAdmin} />
 
         {/* Theme toggle */}
         <button
