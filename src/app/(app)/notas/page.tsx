@@ -131,6 +131,16 @@ export default function NotasPage() {
   const { data: session } = authClient.useSession();
   const isAdmin = (session?.user as { role?: string } | undefined)?.role === "admin";
 
+
+  // Inicializa a busca a partir de ?q= vindo da busca global
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const q = new URLSearchParams(window.location.search).get("q");
+      if (q) setSearch(q);
+    }, 0);
+    return () => clearTimeout(t);
+  }, []);
+
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
     try {

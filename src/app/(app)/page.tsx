@@ -1,14 +1,20 @@
 import { Header } from "@/components/ui/Header";
 import { StatCard } from "@/components/ui/StatCard";
-import { getRole } from "@/lib/permissions";
+import { getSession } from "@/lib/session";
 import { BillingAreaChart, ClientsBarChart, DistributionPieChart } from "@/components/charts/InvoiceCharts";
+import { StatusDonutChart } from "@/components/charts/OperationCharts";
 import { InvoiceRepositoryProvider } from "@/infra/repositories/InvoiceRepositoryProvider";
+import { PrismaProcessRepository } from "@/infra/repositories/PrismaProcessRepository";
+import { PrismaTicketRepository } from "@/infra/repositories/PrismaTicketRepository";
+import { PROCESS_STATUSES, PROCESS_STATUS_LABELS } from "@/entities/Process";
+import { TICKET_STATUSES, TICKET_STATUS_LABELS } from "@/entities/Ticket";
 import {
   TrendingUp,
   DollarSign,
   FileText,
   Receipt,
   ArrowRight,
+  Workflow,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -22,7 +28,9 @@ export const revalidate = 0;
 export default async function DashboardPage() {
   const repository = InvoiceRepositoryProvider.getServerRepository();
   // Item 13: upload é exclusivo de admin — esconde o CTA para usuários comuns
-  const canUpload = (await getRole()) === "admin";
+  const session = await getSession();
+  const role = session?.user?.role ?? "user";
+  const canUpload = role === "admin";
   
   let stats;
   try {
@@ -41,6 +49,30 @@ export default async function DashboardPage() {
   }
 
   const pieData = stats.topClients.map((c) => ({ name: c.name, value: c.value }));
+
+  // Fase 2.4: dados operacionais (processos e tickets) para os gráficos de status
+  let processStatusData: { name: string; value: number }[] = [];
+  let ticketStatusData: { name: string; value: number }[] = [];
+  try {
+    const [processes, tickets] = await Promise.all([
+      role === "admin" ? new PrismaProcessRepository().findMany() : Promise.resolve([]),
+      session?.user?.id
+        ? new PrismaTicketRepository().findMany(
+            role === "admin" ? {} : { userId: session.user.id }
+          )
+        : Promise.resolve([]),
+    ]);
+    processStatusData = PROCESS_STATUSES.map((s) => ({
+      name: PROCESS_STATUS_LABELS[s].label,
+      value: processes.filter((p) => p.status === s).length,
+    }));
+    ticketStatusData = TICKET_STATUSES.map((s) => ({
+      name: TICKET_STATUS_LABELS[s].label,
+      value: tickets.filter((t) => t.status === s).length,
+    }));
+  } catch {
+    // Dashboard financeiro continua funcionando mesmo sem dados operacionais
+  }
 
   return (
     <div>
@@ -132,6 +164,56 @@ export default async function DashboardPage() {
               <p className="text-xs text-muted-foreground">Top 5 tomadores por faturamento</p>
             </div>
             <DistributionPieChart data={pieData} />
+          </div>
+        </div>
+
+        {/* Fase 2.4: Operação — processos e tickets por status */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {role === "admin" && (
+            <div className="glass-card rounded-xl p-5 border border-border">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-sm font-semibold text-foreground">Processos por Status</h2>
+                  <p className="text-xs text-muted-foreground">Acompanhamento operacional</p>
+                </div>
+                <Link
+                  href="/admin/processos"
+                  className="text-xs text-primary hover:underline flex items-center gap-1"
+                >
+                  <Workflow size={12} />
+                  Ver processos
+                </Link>
+              </div>
+              <StatusDonutChart
+                data={processStatusData}
+                emptyMessage="Nenhum processo cadastrado ainda."
+              />
+            </div>
+          )}
+
+          <div
+            className={`glass-card rounded-xl p-5 border border-border ${
+              role !== "admin" ? "lg:col-span-2" : ""
+            }`}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">
+                  {role === "admin" ? "Tickets por Status" : "Meus Tickets por Status"}
+                </h2>
+                <p className="text-xs text-muted-foreground">Chamados de suporte</p>
+              </div>
+              <Link
+                href={role === "admin" ? "/admin/tickets" : "/tickets"}
+                className="text-xs text-primary hover:underline flex items-center gap-1"
+              >
+                Ver tickets <ArrowRight size={12} />
+              </Link>
+            </div>
+            <StatusDonutChart
+              data={ticketStatusData}
+              emptyMessage="Nenhum chamado aberto ainda."
+            />
           </div>
         </div>
 

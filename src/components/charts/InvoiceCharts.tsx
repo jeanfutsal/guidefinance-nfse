@@ -57,8 +57,8 @@ export function BillingAreaChart({ data }: BillingChartProps) {
         <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
         <YAxis tickFormatter={(v) => formatBRL(v)} tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} width={70} />
         <Tooltip
-          contentStyle={{ background: "#131b2e", border: "1px solid #1e293b", borderRadius: 8, fontSize: 12 }}
-          labelStyle={{ color: "#f8fafc", fontWeight: 600 }}
+          contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+          labelStyle={{ color: "var(--foreground)", fontWeight: 600 }}
           //formatter={(v: number, name: string) => [
           //  formatBRL(v),
           //  name === "value" ? "Faturamento" : "Impostos",
@@ -100,8 +100,8 @@ export function ClientsBarChart({ data }: ClientsBarChartProps) {
         <XAxis type="number" tickFormatter={(v) => formatBRL(v)} tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
         <YAxis type="category" dataKey="shortName" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} width={110} />
         <Tooltip
-          contentStyle={{ background: "#131b2e", border: "1px solid #1e293b", borderRadius: 8, fontSize: 12 }}
-          labelStyle={{ color: "#f8fafc", fontWeight: 600 }}
+          contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
+          labelStyle={{ color: "var(--foreground)", fontWeight: 600 }}
           formatter={(value) => [formatBRL(Number(value ?? 0)), "Faturamento"]}
         />
         <Bar dataKey="value" radius={[0, 4, 4, 0]}>
@@ -144,13 +144,13 @@ export function DistributionPieChart({ data }: DistributionPieProps) {
           ))}
         </Pie>
         <Tooltip
-          contentStyle={{ background: "#131b2e", border: "1px solid #1e293b", borderRadius: 8, fontSize: 12 }}
+          contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
           formatter={(value, name) => [formatBRL(Number(value ?? 0)), String(name)]}
         />
         <Legend
           iconSize={8}
           iconType="circle"
-          wrapperStyle={{ fontSize: 11, color: "#94a3b8" }}
+          wrapperStyle={{ fontSize: 11, color: "var(--muted-foreground)" }}
           formatter={(value: string) =>
             value.length > 15 ? value.substring(0, 15) + "…" : value
           }
