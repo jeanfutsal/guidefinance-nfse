@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { PrismaTicketRepository } from "@/infra/repositories/PrismaTicketRepository";
+import { PrismaNotificationRepository } from "@/infra/repositories/PrismaNotificationRepository";
 
 const repo = new PrismaTicketRepository();
+const notificationRepo = new PrismaNotificationRepository();
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -64,6 +66,23 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       response,
       respondedAt,
     });
+
+    // Notifica o dono do ticket quando uma resposta é enviada
+    const responseChanged = Boolean(response) && response !== existing.response;
+    if (responseChanged) {
+      try {
+        await notificationRepo.create({
+          userId: existing.userId,
+          ticketId: id,
+          title: `Resposta no ticket "${updated.title}"`,
+          message: response,
+        });
+      } catch (notifyError) {
+        // Falha na notificação não pode derrubar a resposta do ticket
+        console.error("Erro ao criar notificação de ticket:", notifyError);
+      }
+    }
+
     return NextResponse.json(updated);
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";

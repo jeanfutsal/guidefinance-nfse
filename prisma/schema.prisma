@@ -23,6 +23,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   tickets       Ticket[] // Fase 2.3
+  notifications Notification[] // Fase 2.4
 }
 
 model Account {
@@ -208,10 +209,27 @@ model Ticket {
   // Resposta do administrador
   response    String?
   respondedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  notifications Notification[]
 
   @@index([status])
   @@index([userId])
   @@index([processId])
+}
+
+model Notification {
+  id       String  @id @default(uuid())
+  userId   String
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticketId String?
+  ticket   Ticket? @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  title    String
+  message  String?
+  read     Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([read])
 }
