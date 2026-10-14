@@ -2,11 +2,11 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Header } from "@/components/ui/Header";
+import { ExportCsvButton, CsvColumn } from "@/components/ui/ExportCsvButton";
 import { Invoice } from "@/core/entities/Invoice";
 import {
   Search,
   Filter,
-  Download,
   Archive,
   ArchiveRestore,
   Eye,
@@ -34,6 +34,19 @@ function formatDate(iso: string) {
 }
 
 const PAGE_SIZE = 10;
+
+const NOTAS_CSV_COLUMNS: CsvColumn<Invoice>[] = [
+  { header: "Número", value: (i) => i.number },
+  { header: "Emissão", value: (i) => formatDate(i.issueDate) },
+  { header: "Emitente", value: (i) => i.emitenteName },
+  { header: "CNPJ Emitente", value: (i) => i.emitenteCnpj },
+  { header: "Tomador", value: (i) => i.tomadorName },
+  { header: "CNPJ Tomador", value: (i) => i.tomadorCnpj },
+  { header: "Valor Serviço", value: (i) => i.serviceValue.toFixed(2) },
+  { header: "Valor Líquido", value: (i) => i.liquidValue.toFixed(2) },
+  { header: "ISSQN", value: (i) => i.issqnValue.toFixed(2) },
+  { header: "Chave de Acesso", value: (i) => i.accessKey },
+];
 
 interface DetailModalProps {
   invoice: Invoice;
@@ -91,13 +104,13 @@ function DetailModal({ invoice, onClose }: DetailModalProps) {
             { label: "Alíquota ISSQN", value: invoice.issqnRate > 0 ? `${invoice.issqnRate}%` : "—" },
             { label: "ISSQN Retido", value: invoice.issqnRetained ? "Sim" : "Não" },
             { label: "Retenções Federais", value: formatBRL(invoice.federalRetentions) },
-          ].reduce((rows: any[], field, i) => {
+          ].reduce((rows: { label: string; value: string }[][], field, i) => {
             if (i % 2 === 0) rows.push([field]);
             else rows[rows.length - 1].push(field);
             return rows;
           }, []).map((row, ri) => (
             <div key={ri} className="grid grid-cols-2 gap-3">
-              {row.map((field: any) => (
+              {row.map((field) => (
                 <div key={field.label}>
                   <p className="text-xs text-muted-foreground uppercase tracking-wider">{field.label}</p>
                   <p className="text-sm text-foreground font-medium mt-0.5 break-words">{field.value || "—"}</p>
@@ -183,21 +196,6 @@ export default function NotasPage() {
     }
   }
 
-  function exportCSV() {
-    const headers = ["Número", "Emissão", "Emitente", "CNPJ Emitente", "Tomador", "CNPJ Tomador", "Valor Serviço", "Valor Líquido", "ISSQN", "Chave de Acesso"];
-    const rows = invoices.map((inv) => [
-      inv.number, formatDate(inv.issueDate), inv.emitenteName, inv.emitenteCnpj,
-      inv.tomadorName, inv.tomadorCnpj,
-      inv.serviceValue.toFixed(2), inv.liquidValue.toFixed(2), inv.issqnValue.toFixed(2),
-      inv.accessKey,
-    ]);
-    const csv = [headers, ...rows].map((r) => r.map((v) => `"${v}"`).join(",")).join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "notas-fiscais.csv"; a.click();
-  }
-
   const totalPages = Math.max(1, Math.ceil(invoices.length / PAGE_SIZE));
   const paginated = invoices.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -241,11 +239,7 @@ export default function NotasPage() {
             >
               <Archive size={14} /> {showArchived ? "Ver ativas" : "Arquivadas"}
             </button>
-            {invoices.length > 0 && (
-              <button onClick={exportCSV} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all">
-                <Download size={14} /> Exportar CSV
-              </button>
-            )}
+            <ExportCsvButton filename="notas-fiscais.csv" columns={NOTAS_CSV_COLUMNS} data={invoices} />
             {isAdmin && (
               <Link href="/upload" className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm hover:opacity-90 transition-opacity">
                 <Upload size={14} /> Upload

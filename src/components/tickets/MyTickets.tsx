@@ -18,6 +18,7 @@ import {
   TICKET_PRIORITY_LABELS,
   TICKET_PRIORITIES,
 } from "@/entities/Ticket";
+import { ExportCsvButton, CsvColumn } from "@/components/ui/ExportCsvButton";
 
 const fieldClass =
   "glass-input w-full rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground";
@@ -35,6 +36,23 @@ function formatDate(iso: string) {
     return "—";
   }
 }
+
+const TICKETS_CSV_COLUMNS: CsvColumn<TicketType>[] = [
+  { header: "Assunto", value: (t) => t.title },
+  {
+    header: "Status",
+    value: (t) => (TICKET_STATUS_LABELS[t.status] ?? TICKET_STATUS_LABELS.aberto).label,
+  },
+  {
+    header: "Prioridade",
+    value: (t) => (TICKET_PRIORITY_LABELS[t.priority] ?? TICKET_PRIORITY_LABELS.media).label,
+  },
+  { header: "Processo", value: (t) => t.processTitle ?? "" },
+  { header: "Descrição", value: (t) => t.description ?? "" },
+  { header: "Resposta", value: (t) => t.response ?? "" },
+  { header: "Criado em", value: (t) => formatDate(t.createdAt) },
+  { header: "Respondido em", value: (t) => (t.respondedAt ? formatDate(t.respondedAt) : "") },
+];
 
 export function MyTickets() {
   const [tickets, setTickets] = useState<TicketType[]>([]);
@@ -121,16 +139,19 @@ export function MyTickets() {
             className={`${fieldClass} pl-9 pr-4`}
           />
         </div>
-        <button
-          onClick={() => {
-            setCreateError(null);
-            setCreateOpen(true);
-          }}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-        >
-          <Plus size={16} />
-          Abrir Chamado
-        </button>
+        <div className="flex items-center gap-3">
+          <ExportCsvButton filename="meus-tickets.csv" columns={TICKETS_CSV_COLUMNS} data={filtered} />
+          <button
+            onClick={() => {
+              setCreateError(null);
+              setCreateOpen(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            <Plus size={16} />
+            Abrir Chamado
+          </button>
+        </div>
       </div>
 
       {error && (
