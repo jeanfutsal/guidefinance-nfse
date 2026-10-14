@@ -19,6 +19,7 @@ import {
   TICKET_STATUS_LABELS,
   TICKET_PRIORITY_LABELS,
 } from "@/entities/Ticket";
+import { ExportCsvButton, CsvColumn } from "@/components/ui/ExportCsvButton";
 
 const fieldClass =
   "glass-input w-full rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground";
@@ -36,6 +37,25 @@ function formatDate(iso: string) {
     return "—";
   }
 }
+
+const ADMIN_TICKETS_CSV_COLUMNS: CsvColumn<TicketType>[] = [
+  { header: "Assunto", value: (t) => t.title },
+  { header: "Solicitante", value: (t) => t.userName ?? "" },
+  { header: "E-mail", value: (t) => t.userEmail ?? "" },
+  {
+    header: "Status",
+    value: (t) => (TICKET_STATUS_LABELS[t.status] ?? TICKET_STATUS_LABELS.aberto).label,
+  },
+  {
+    header: "Prioridade",
+    value: (t) => (TICKET_PRIORITY_LABELS[t.priority] ?? TICKET_PRIORITY_LABELS.media).label,
+  },
+  { header: "Processo", value: (t) => t.processTitle ?? "" },
+  { header: "Descrição", value: (t) => t.description ?? "" },
+  { header: "Resposta", value: (t) => t.response ?? "" },
+  { header: "Criado em", value: (t) => formatDate(t.createdAt) },
+  { header: "Respondido em", value: (t) => (t.respondedAt ? formatDate(t.respondedAt) : "") },
+];
 
 export function TicketsAdmin() {
   const router = useRouter();
@@ -148,17 +168,24 @@ export function TicketsAdmin() {
 
   return (
     <div className="space-y-6">
-      <div className="relative max-w-sm">
-        <Search
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-          size={16}
-        />
-        <input
-          type="text"
-          placeholder="Buscar por assunto, nome ou e-mail..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className={`${fieldClass} pl-9 pr-4`}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            size={16}
+          />
+          <input
+            type="text"
+            placeholder="Buscar por assunto, nome ou e-mail..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className={`${fieldClass} pl-9 pr-4`}
+          />
+        </div>
+        <ExportCsvButton
+          filename="tickets.csv"
+          columns={ADMIN_TICKETS_CSV_COLUMNS}
+          data={filtered}
         />
       </div>
 
