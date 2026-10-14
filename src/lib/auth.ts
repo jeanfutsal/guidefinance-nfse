@@ -15,6 +15,9 @@ export const auth = betterAuth({
     // Contas são criadas pelo script scripts/seed-admin.ts ou via plugin admin.
     disableSignUp: true,
   },
+  // E2E (Playwright) define RATE_LIMIT_DISABLED=true para permitir
+  // logins em sequencia durante os testes - fora disso, mantem os defaults.
+  rateLimit: process.env.RATE_LIMIT_DISABLED === 'true' ? { enabled: false } : undefined,
   user: {
     additionalFields: {
       role: {
