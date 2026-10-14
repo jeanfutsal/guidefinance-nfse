@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main, fase1-seguranca]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit:
+    name: Tipos + testes unit + build
+    runs-on: ubuntu-latest
+    env:
+      # Secrets do repositório; fallbacks permitem que o CI suba mesmo
+      # antes de configurá-los (neste job nada toca o banco real).
+      DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://ci:ci@localhost:5432/ci' }}
+      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET || 'ci-fallback-secret-de-32-chars-ok' }}
+      BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL || 'http://localhost:3000' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Checar tipos
+        run: npx tsc --noEmit
+
+      - name: Testes unitários (Vitest)
+        run: npm test
+
+      - name: Build de produção
+        run: npm run build
+
+      # ESLint ficou fora do CI por ora: há ~18 problemas pre-existentes
+      # fora do escopo das fases entregues. Reativar quando forem corrigidos:
+      #   - run: npm run lint
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    # Exige os secrets de banco reais (o teste roda contra o app subido).
+    # Ative com: repositório → Settings → Variables → criar ENABLE_E2E=true
+    if: ${{ vars.ENABLE_E2E == 'true' }}
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+      BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL || 'http://localhost:3000' }}
+      RATE_LIMIT_DISABLED: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Instalar Chromium (Playwright)
+        run: npx playwright install --with-deps chromium
+
+      - name: Build de produção
+        run: npm run build
+
+      - name: Testes E2E
+        run: npm run test:e2e
