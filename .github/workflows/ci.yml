@@ -36,9 +36,8 @@ jobs:
       - name: Build de produção
         run: npm run build
 
-      # ESLint ficou fora do CI por ora: há ~18 problemas pre-existentes
-      # fora do escopo das fases entregues. Reativar quando forem corrigidos:
-      #   - run: npm run lint
+      - name: Lint (ESLint)
+        run: npm run lint
 
   e2e:
     name: E2E (Playwright)

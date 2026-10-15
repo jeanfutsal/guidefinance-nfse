@@ -27,7 +27,6 @@ const mockMonths = [
 
 export function GoalsDashboard({
   totalLiquid,
-  totalInvoiced,
   monthlyBilling,
 }: GoalsDashboardProps) {
   // Define active data: database stats if available, otherwise mock data for presentation
