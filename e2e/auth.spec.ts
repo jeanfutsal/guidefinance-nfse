@@ -32,4 +32,32 @@ test.describe("autenticação e permissões", () => {
     await expect(page.locator("div.text-error")).toBeVisible();
     await expect(page).toHaveURL(/\/login/);
   });
+
+  test("visitante anônimo vê dashboard e relatórios sem login", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(page).toHaveURL("http://localhost:3000/");
+    await expect(
+      page.getByRole("heading", { name: "Dashboard Financeiro" })
+    ).toBeVisible();
+
+    await page.goto("/relatorios");
+    await expect(
+      page.getByRole("heading", { name: "Relatórios e Análises" })
+    ).toBeVisible();
+
+    await page.goto("/notas");
+    await expect(page).toHaveURL(/\/notas/);
+    // CTA de entrada visível para o visitante
+    await expect(page.getByRole("link", { name: "Entrar" })).toBeVisible();
+  });
+
+  test("visitante anônimo é barrado em /upload e /admin", async ({ page }) => {
+    await page.goto("/upload");
+    await expect(page).toHaveURL(/\/login/);
+
+    await page.goto("/admin");
+    await expect(page).toHaveURL(/\/login/);
+  });
 });

@@ -6,11 +6,8 @@ import { getSession } from "@/lib/session";
 const repository = InvoiceRepositoryProvider.getServerRepository();
 
 export async function GET(request: NextRequest) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
-  }
-
+  // Leitura pública: o visitante vê a lista de notas em /notas sem login.
+  // POST/PATCH/DELETE continuam exigindo sessão e papel admin (abaixo).
   try {
     const { searchParams } = request.nextUrl;
 

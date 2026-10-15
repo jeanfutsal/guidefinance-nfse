@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
-// Páginas públicas (sem necessidade de sessão)
-const PUBLIC_PATHS = ["/login"];
+// Páginas públicas (sem necessidade de sessão) — o visitante anônimo
+// acessa direto o dashboard, as notas e os relatórios.
+// Nunca incluir "/" na lista: a comparação de "/" é exata (ver isPublic).
+const PUBLIC_PATHS = ["/login", "/notas", "/relatorios"];
 
 /**
  * Check OTIMISTA de sessão (Next.js 16: middleware => proxy).
@@ -13,7 +15,13 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = getSessionCookie(request);
 
-  const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
+  // "/" é público (visitante cai direto no dashboard); demais públicos exatos.
+  // startsWith usa `${path}/` para não tornar tudo público a partir de "/".
+  const isPublic =
+    pathname === "/" ||
+    PUBLIC_PATHS.some(
+      (path) => pathname === path || pathname.startsWith(`${path}/`)
+    );
 
   if (!sessionCookie && !isPublic) {
     return NextResponse.redirect(new URL("/login", request.url));
