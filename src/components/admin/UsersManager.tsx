@@ -49,6 +49,11 @@ export function UsersManager() {
   const [removing, setRemoving] = useState(false);
   const [removeError, setRemoveError] = useState<string | null>(null);
 
+  // Modal: alterar o próprio papel (auto-rebaixamento com confirmação)
+  const [roleTarget, setRoleTarget] = useState<AdminUser | null>(null);
+  const [roleError, setRoleError] = useState<string | null>(null);
+  const [roleBusy, setRoleBusy] = useState(false);
+
   const { data: session } = authClient.useSession();
   const currentUserId = session?.user?.id;
 
@@ -111,8 +116,7 @@ export function UsersManager() {
     }
   }
 
-  async function handleToggleRole(user: AdminUser) {
-    if (user.id === currentUserId) return;
+  async function applyToggleRole(user: AdminUser): Promise<boolean> {
     const newRole = user.role === "admin" ? "user" : "admin";
     setBusyId(user.id);
     try {
@@ -120,13 +124,68 @@ export function UsersManager() {
         userId: user.id,
         role: newRole,
       });
-      if (!error) {
-        setUsers((prev) =>
-          prev.map((u) => (u.id === user.id ? { ...u, role: newRole } : u))
-        );
+      if (error) {
+        setRoleError(error.message ?? "Erro ao alterar papel do usuário.");
+        return false;
       }
+      setRoleError(null);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === user.id ? { ...u, role: newRole } : u))
+      );
+      return true;
+    } catch {
+      setRoleError("Erro inesperado ao alterar papel. Tente novamente.");
+      return false;
     } finally {
       setBusyId(null);
+    }
+  }
+
+  function handleToggleRole(user: AdminUser) {
+    if (user.id === currentUserId) {
+      // Alterar o próprio papel exige confirmação (risco de perder o acesso admin)
+      setRoleError(null);
+      setRoleTarget(user);
+      return;
+    }
+    void applyToggleRole(user);
+  }
+
+  async function confirmSelfRoleChange() {
+    if (!roleTarget) return;
+    setRoleBusy(true);
+    setRoleError(null);
+    try {
+      // Lista completa (sem busca) para garantir que exista OUTRO administrador
+      const { data, error } = await authClient.admin.listUsers({
+        query: { limit: 200 },
+      });
+      if (error) {
+        setRoleError(
+          "Não foi possível verificar os administradores. Tente novamente."
+        );
+        return;
+      }
+      const hasOtherAdmin = (data?.users ?? []).some(
+        (u) => u.role === "admin" && u.id !== currentUserId
+      );
+      if (roleTarget.role === "admin" && !hasOtherAdmin) {
+        setRoleError(
+          "Este é o único administrador. Promova outro usuário para administrador antes de rebaixar esta conta."
+        );
+        return;
+      }
+      const wasAdmin = roleTarget.role === "admin";
+      const ok = await applyToggleRole(roleTarget);
+      if (ok) {
+        setRoleTarget(null);
+        if (wasAdmin) {
+          // Saiu do papel administrativo: volta ao dashboard comum
+          window.location.assign("/");
+        }
+      }
+    } finally {
+      setRoleBusy(false);
     }
   }
 
@@ -198,6 +257,13 @@ export function UsersManager() {
         </div>
       )}
 
+      {roleError && !roleTarget && (
+        <div className="flex items-start gap-2 rounded-lg border border-error/40 bg-error/10 px-3 py-2.5 text-sm text-error">
+          <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
+          <span>{roleError}</span>
+        </div>
+      )}
+
       {/* Tabela */}
       <div className="glass-card rounded-xl border border-border overflow-hidden">
         {loading ? (
@@ -252,10 +318,10 @@ export function UsersManager() {
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => handleToggleRole(u)}
-                            disabled={busyId === u.id || isSelf}
+                            disabled={busyId === u.id || roleBusy}
                             title={
                               isSelf
-                                ? "Você não pode alterar seu próprio papel"
+                                ? "Alterar seu próprio papel"
                                 : isAdminUser
                                 ? "Rebaixar para usuário"
                                 : "Promover para administrador"
@@ -307,6 +373,73 @@ export function UsersManager() {
           </div>
         )}
       </div>
+
+      {/* Modal: alterar o próprio papel */}
+      {roleTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={() => {
+            if (roleBusy) return;
+            setRoleTarget(null);
+            setRoleError(null);
+          }}
+        >
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div
+            className="relative z-10 w-full max-w-sm glass-panel rounded-2xl border border-border shadow-2xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-semibold text-foreground">
+              Alterar seu próprio papel?
+            </h3>
+            <p className="text-sm text-muted-foreground mt-2">
+              Sua conta{" "}
+              <span className="text-foreground font-medium">
+                {roleTarget.email}
+              </span>{" "}
+              passará de{" "}
+              <span className="text-foreground font-medium">
+                {roleTarget.role === "admin" ? "Administrador" : "Usuário"}
+              </span>{" "}
+              para{" "}
+              <span className="text-foreground font-medium">
+                {roleTarget.role === "admin" ? "Usuário" : "Administrador"}
+              </span>
+              . Você perderá imediatamente o acesso à área administrativa
+              (usuários, processos e upload). Esta ação só pode ser desfeita por
+              outro administrador.
+            </p>
+
+            {roleError && (
+              <div className="flex items-start gap-2 mt-3 rounded-lg border border-error/40 bg-error/10 px-3 py-2 text-xs text-error">
+                <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
+                <span>{roleError}</span>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 mt-5">
+              <button
+                onClick={() => {
+                  setRoleTarget(null);
+                  setRoleError(null);
+                }}
+                disabled={roleBusy}
+                className="px-4 py-2 rounded-lg text-sm text-muted-foreground hover:bg-secondary transition-colors disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmSelfRoleChange}
+                disabled={roleBusy}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition-colors disabled:opacity-60"
+              >
+                {roleBusy && <Loader2 size={14} className="animate-spin" />}
+                Confirmar troca
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal: criar usuário */}
       {createOpen && (
