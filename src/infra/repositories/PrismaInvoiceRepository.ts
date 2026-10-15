@@ -1,6 +1,7 @@
 import { InvoiceRepository, InvoiceFilters } from "../../core/repositories/InvoiceRepository";
 import { Invoice, DashboardStats } from "../../core/entities/Invoice";
 import { prisma } from "../db/prisma";
+import type { Prisma, Invoice as InvoiceDb } from "@prisma/client";
 
 export class PrismaInvoiceRepository implements InvoiceRepository {
   async save(invoice: Omit<Invoice, "id"> & { id?: string }): Promise<Invoice> {
@@ -163,7 +164,7 @@ export class PrismaInvoiceRepository implements InvoiceRepository {
     // Ordena os faturamentos mensais cronologicamente
     const monthlyBilling = Object.entries(monthlyMap)
       .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([_, data]) => data)
+      .map(([, data]) => data)
       .slice(-12); // Pega no máximo os últimos 12 meses
 
     return {
@@ -181,7 +182,7 @@ export class PrismaInvoiceRepository implements InvoiceRepository {
   // --- Auxiliares ---
 
   private buildWhereClause(filters?: InvoiceFilters) {
-    const conditions: any[] = [];
+    const conditions: Prisma.InvoiceWhereInput[] = [];
 
     // Arquivamento (soft-delete): exclui arquivadas por padrão;
     // filters.archived === true retorna apenas as arquivadas
@@ -197,7 +198,7 @@ export class PrismaInvoiceRepository implements InvoiceRepository {
 
     // Filtro de Data
     if (filters.startDate || filters.endDate) {
-      const dateCond: any = {};
+      const dateCond: { gte?: Date; lte?: Date } = {};
       if (filters.startDate) dateCond.gte = new Date(filters.startDate);
       if (filters.endDate) {
         // Ajusta fim do dia para abranger até 23:59:59
@@ -218,7 +219,7 @@ export class PrismaInvoiceRepository implements InvoiceRepository {
 
     // Intervalo de valores
     if (filters.minValue !== undefined || filters.maxValue !== undefined) {
-      const valueCond: any = {};
+      const valueCond: { gte?: number; lte?: number } = {};
       if (filters.minValue !== undefined) valueCond.gte = filters.minValue;
       if (filters.maxValue !== undefined) valueCond.lte = filters.maxValue;
       conditions.push({ serviceValue: valueCond });
@@ -243,7 +244,7 @@ export class PrismaInvoiceRepository implements InvoiceRepository {
     return conditions.length > 0 ? { AND: conditions } : {};
   }
 
-  private mapToEntity(dbInvoice: any): Invoice {
+  private mapToEntity(dbInvoice: InvoiceDb): Invoice {
     return {
       id: dbInvoice.id,
       accessKey: dbInvoice.accessKey,

@@ -26,10 +26,10 @@ export async function GET(request: NextRequest) {
 
     const stats = await repository.getStats(filters);
     return NextResponse.json(stats);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Erro ao obter estatísticas:", error);
     return NextResponse.json(
-      { error: "Erro ao compilar estatísticas financeiras: " + error.message },
+      { error: "Erro ao compilar estatísticas financeiras: " + (error instanceof Error ? error.message : "erro desconhecido") },
       { status: 500 }
     );
   }

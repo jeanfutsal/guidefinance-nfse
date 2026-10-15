@@ -32,12 +32,12 @@ export async function GET(request: NextRequest) {
 
     const invoices = await repository.findAll(filters);
     return NextResponse.json(invoices);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Erro ao listar notas fiscais:", error);
 
     return NextResponse.json(
       {
-        error: "Erro ao buscar notas fiscais: " + error.message,
+        error: "Erro ao buscar notas fiscais: " + (error instanceof Error ? error.message : "erro desconhecido"),
       },
       { status: 500 }
     );
@@ -92,12 +92,12 @@ export async function POST(request: NextRequest) {
     const savedInvoice = await repository.save(body);
 
     return NextResponse.json(savedInvoice);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Erro ao salvar nota fiscal:", error);
 
     return NextResponse.json(
       {
-        error: "Erro ao registrar nota fiscal: " + error.message,
+        error: "Erro ao registrar nota fiscal: " + (error instanceof Error ? error.message : "erro desconhecido"),
       },
       { status: 500 }
     );
@@ -177,12 +177,12 @@ export async function DELETE(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Erro ao excluir nota fiscal:", error);
 
     return NextResponse.json(
       {
-        error: "Erro ao remover nota fiscal: " + error.message,
+        error: "Erro ao remover nota fiscal: " + (error instanceof Error ? error.message : "erro desconhecido"),
       },
       { status: 500 }
     );

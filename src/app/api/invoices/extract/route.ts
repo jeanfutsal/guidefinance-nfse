@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractInvoiceData } from "@/core/use-cases/extractInvoiceData";
 import { getSession } from "@/lib/session";
+import pdfParse from "pdf-parse";
 
 export const runtime = "nodejs";
-
-const pdfParse = require("pdf-parse");
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
@@ -62,14 +61,14 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(invoiceData);
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("Erro na extração do PDF:", error);
 
     return NextResponse.json(
       {
         error:
           "Erro interno no servidor ao processar o arquivo PDF: " +
-          error.message,
+          (error instanceof Error ? error.message : "erro desconhecido"),
       },
       { status: 500 }
     );

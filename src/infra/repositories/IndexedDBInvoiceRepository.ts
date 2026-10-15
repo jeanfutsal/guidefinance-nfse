@@ -203,7 +203,7 @@ export class IndexedDBInvoiceRepository implements InvoiceRepository {
 
     const monthlyBilling = Object.entries(monthlyMap)
       .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([_, data]) => data)
+      .map(([, data]) => data)
       .slice(-12);
 
     return {

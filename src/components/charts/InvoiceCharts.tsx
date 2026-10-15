@@ -35,7 +35,7 @@ export function BillingAreaChart({ data }: BillingChartProps) {
   if (!data || data.length === 0) {
     return (
       <div className="flex items-center justify-center h-52 text-muted-foreground text-sm">
-        Sem dados para exibir. Faça upload de NFS-e's para ver o gráfico.
+        Sem dados para exibir. Faça upload de NFS-e para ver o gráfico.
       </div>
     );
   }

@@ -7,7 +7,7 @@ interface UploadResult {
   fileName: string;
   status: "success" | "error" | "duplicate";
   message?: string;
-  data?: any;
+  data?: unknown;
 }
 
 export function UploadZone() {
@@ -69,11 +69,11 @@ export function UploadZone() {
             message: saveData.error || "Erro ao salvar a nota",
           });
         }
-      } catch (err: any) {
+      } catch (err) {
         newResults.push({
           fileName: file.name,
           status: "error",
-          message: err.message || "Erro desconhecido",
+          message: err instanceof Error ? err.message : "Erro desconhecido",
         });
       }
     }
