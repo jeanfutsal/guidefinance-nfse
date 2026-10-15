@@ -104,8 +104,8 @@ export function Header({ title, subtitle }: HeaderProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-2">
-        {/* Busca global */}
-        <GlobalSearch isAdmin={isAdmin} />
+        {/* Busca global (apenas autenticado) */}
+        {session && <GlobalSearch isAdmin={isAdmin} />}
 
         {/* Theme toggle */}
         <button
@@ -116,10 +116,11 @@ export function Header({ title, subtitle }: HeaderProps) {
           {dark ? <Sun size={16} /> : <Moon size={16} />}
         </button>
 
-        {/* Notifications */}
-        <NotificationsBell />
+        {/* Notifications (apenas autenticado) */}
+        {session && <NotificationsBell />}
 
-        {/* Avatar + dropdown */}
+        {/* Avatar + dropdown (logado) ou CTA "Entrar" (anônimo) */}
+        {session ? (
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((v) => !v)}
@@ -191,6 +192,14 @@ export function Header({ title, subtitle }: HeaderProps) {
             </div>
           )}
         </div>
+        ) : (
+          <Link
+            href="/login"
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
+          >
+            Entrar
+          </Link>
+        )}
       </div>
     </header>
   );

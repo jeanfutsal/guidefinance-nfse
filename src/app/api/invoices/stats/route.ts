@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { InvoiceRepositoryProvider } from "@/infra/repositories/InvoiceRepositoryProvider";
 import { InvoiceFilters } from "@/core/repositories/InvoiceRepository";
-import { getSession } from "@/lib/session";
 
 const repository = InvoiceRepositoryProvider.getServerRepository();
 
 export async function GET(request: NextRequest) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
-  }
-
+  // Leitura pública: estatísticas alimentam dashboard/relatórios abertos.
   try {
     const { searchParams } = request.nextUrl;
     

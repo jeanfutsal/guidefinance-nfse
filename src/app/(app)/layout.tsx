@@ -1,15 +1,10 @@
-import { redirect } from "next/navigation";
-import { getSession } from "@/lib/session";
 import { Sidebar } from "@/components/ui/Sidebar";
 import { SidebarProvider } from "@/components/ui/SidebarContext";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  // Validação real da sessão (o proxy apenas faz o check otimista do cookie)
-  const session = await getSession();
-  if (!session) {
-    redirect("/login");
-  }
-
+  // Sem redirect de sessão aqui: /, /notas e /relatorios são públicas
+  // (definidas em src/proxy.ts). Rotas como /tickets e /upload continuam
+  // barradas pelo proxy; os dados de verdade são protegidos nas APIs (401/403).
   return (
     <SidebarProvider>
       <div className="flex h-screen overflow-hidden">
