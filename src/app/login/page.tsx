@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Zap, Loader2, AlertCircle, UserPlus } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
@@ -11,6 +11,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  // Se já estiver autenticado, redireciona para o dashboard (evita ver login)
+  useEffect(() => {
+    authClient.getSession().then((res) => {
+      if (res?.data?.session) {
+        router.push("/");
+      }
+    });
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

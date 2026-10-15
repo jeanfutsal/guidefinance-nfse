@@ -47,3 +47,6 @@ next-env.d.ts
 prisma/dev.db
 prisma/dev.db-journal
 prisma/*.db
+
+# Amostras locais de NFS-e (não versionar — podem conter dados reais)
+pdf_samples/
