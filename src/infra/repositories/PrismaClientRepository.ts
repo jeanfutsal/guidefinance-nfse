@@ -51,6 +51,46 @@ export class PrismaClientRepository implements ClientRepository {
     return client ? this.mapToEntity(client) : null;
   }
 
+  /**
+   * Lista clientes com a quantidade de notas fiscais do respectivo CNPJ
+   * (tomador). Usado na listação administrativa.
+   */
+  async findManyWithInvoiceCounts(): Promise<(Client & { invoiceCount: number })[]> {
+    const [clients, counts] = await Promise.all([
+      prisma.client.findMany({ orderBy: { razaoSocial: "asc" } }),
+      prisma.invoice.groupBy({ by: ["tomadorCnpj"], _count: { _all: true } }),
+    ]);
+    const byCnpj = new Map(counts.map((c) => [c.tomadorCnpj, c._count._all]));
+    return clients.map((c) => ({
+      ...this.mapToEntity(c),
+      invoiceCount: byCnpj.get(c.cnpj) ?? 0,
+    }));
+  }
+
+  /**
+   * Cria clientes automaticamente para CNPJs de tomador ainda não
+   * cadastrados. Retorna a quantidade de clientes criados.
+   */
+  async syncFromInvoices(): Promise<number> {
+    const tomadores = await prisma.invoice.groupBy({
+      by: ["tomadorCnpj", "tomadorName"],
+    });
+    let created = 0;
+    for (const t of tomadores) {
+      if (!t.tomadorCnpj) continue;
+      const existing = await prisma.client.findUnique({ where: { cnpj: t.tomadorCnpj } });
+      if (existing) continue;
+      await prisma.client.create({
+        data: {
+          cnpj: t.tomadorCnpj,
+          razaoSocial: t.tomadorName?.trim() || t.tomadorCnpj,
+        },
+      });
+      created += 1;
+    }
+    return created;
+  }
+
   async delete(id: string): Promise<boolean> {
     try {
       await prisma.client.delete({ where: { id } });

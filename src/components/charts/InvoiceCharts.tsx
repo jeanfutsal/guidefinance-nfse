@@ -102,7 +102,15 @@ export function ClientsBarChart({ data }: ClientsBarChartProps) {
         <Tooltip
           contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
           labelStyle={{ color: "var(--foreground)", fontWeight: 600 }}
-          formatter={(value) => [formatBRL(Number(value ?? 0)), "Faturamento"]}
+          formatter={(value, _name, item) => {
+            const count = (item?.payload as { count?: number } | undefined)?.count;
+            return [
+              formatBRL(Number(value ?? 0)),
+              typeof count === "number"
+                ? `Faturamento · ${count} nota${count !== 1 ? "s" : ""}`
+                : "Faturamento",
+            ];
+          }}
         />
         <Bar dataKey="value" radius={[0, 4, 4, 0]}>
           {displayData.map((_, i) => (

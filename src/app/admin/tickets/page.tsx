@@ -4,8 +4,8 @@ import { TicketsAdmin } from "@/components/tickets/TicketsAdmin";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminTicketsPage() {
-  requireAdmin();
+export default async function AdminTicketsPage() {
+  await requireAdmin();
   return (
     <div>
       <Header

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Zap, Loader2, AlertCircle, UserPlus } from "lucide-react";
+import { ArrowLeft, Zap, Loader2, AlertCircle, UserPlus } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
 export default function LoginPage() {
@@ -124,6 +124,21 @@ export default function LoginPage() {
               Entrar
             </button>
           </form>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (window.history.length > 1) {
+                router.back();
+              } else {
+                router.push("/");
+              }
+            }}
+            className="mt-3 w-full flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors"
+          >
+            <ArrowLeft size={16} />
+            Voltar
+          </button>
 
           {/* Cadastro público desativado (Fase 2.1) */}
           <div className="mt-6 flex items-start gap-2 text-xs text-muted-foreground border-t border-border pt-4">

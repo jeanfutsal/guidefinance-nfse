@@ -2,35 +2,15 @@ import { Header } from "@/components/ui/Header";
 import { requireAdmin } from "@/lib/permissions";
 import { PrismaProcessRepository } from "@/infra/repositories/PrismaProcessRepository";
 import { RowActions } from "@/components/admin/RowActions";
-import { ExportCsvButton, CsvColumn } from "@/components/ui/ExportCsvButton";
+import { ProcessosCsvExport } from "@/components/admin/ProcessosCsvExport";
 import Link from "next/link";
 import { Plus, Search, Workflow } from "lucide-react";
-import { PROCESS_STATUSES, PROCESS_STATUS_LABELS, Process } from "@/entities/Process";
+import { PROCESS_STATUSES, PROCESS_STATUS_LABELS } from "@/entities/Process";
 
 export const dynamic = "force-dynamic";
 
 const repo = new PrismaProcessRepository();
 
-const PROCESSOS_CSV_COLUMNS: CsvColumn<Process>[] = [
-  { header: "Título", value: (p) => p.title },
-  {
-    header: "Status",
-    value: (p) => (PROCESS_STATUS_LABELS[p.status] ?? PROCESS_STATUS_LABELS.aberto).label,
-  },
-  { header: "Cliente", value: (p) => p.clientName ?? "" },
-  { header: "Fornecedor", value: (p) => p.supplierName ?? "" },
-  { header: "Etapas", value: (p) => p.steps?.length ?? 0 },
-  { header: "Descrição", value: (p) => p.description ?? "" },
-  {
-    header: "Atualizado em",
-    value: (p) =>
-      new Intl.DateTimeFormat("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      }).format(new Date(p.updatedAt)),
-  },
-];
 
 export default async function AdminProcessesPage({
   searchParams,
@@ -81,11 +61,7 @@ export default async function AdminProcessesPage({
           >
             Filtrar
           </button>
-          <ExportCsvButton
-            filename="processos.csv"
-            columns={PROCESSOS_CSV_COLUMNS}
-            data={processes}
-          />
+          <ProcessosCsvExport processes={processes} />
           <Link
             href="/admin/processos/novo"
             className="ml-auto flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"

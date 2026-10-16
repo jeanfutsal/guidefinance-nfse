@@ -2,6 +2,7 @@ import { Header } from "@/components/ui/Header";
 import { BillingAreaChart, ClientsBarChart, DistributionPieChart } from "@/components/charts/InvoiceCharts";
 import { GoalsDashboard } from "@/components/charts/GoalsDashboard";
 import { InvoiceRepositoryProvider } from "@/infra/repositories/InvoiceRepositoryProvider";
+import { getSession } from "@/lib/session";
 import { BarChart3, TrendingUp, Receipt, Users } from "lucide-react";
 
 function formatBRL(v: number) {
@@ -12,6 +13,9 @@ export const dynamic = "force-dynamic";
 
 export default async function RelatoriosPage() {
   const repository = InvoiceRepositoryProvider.getServerRepository();
+  // Card de prestadores (emitentes) é restrito a administradores
+  const session = await getSession();
+  const isAdmin = session?.user?.role === "admin";
   let stats;
   try {
     stats = await repository.getStats();
@@ -98,8 +102,8 @@ export default async function RelatoriosPage() {
           </div>
         </div>
 
-        {/* Maiores emitentes */}
-        {stats.topSuppliers.length > 0 && (
+        {/* Maiores emitentes — visível apenas para administradores */}
+        {isAdmin && stats.topSuppliers.length > 0 && (
           <div className="glass-card rounded-xl p-5 border border-border">
             <h2 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
               <Users size={16} className="text-indigo-400" />
