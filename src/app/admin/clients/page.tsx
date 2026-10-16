@@ -12,7 +12,14 @@ const repo = new PrismaClientRepository();
 export default async function AdminClientsPage() {
   await requireAdmin();
 
-  const clients = await repo.findMany();
+  // Auto-popula clientes a partir dos CNPJs de tomador encontrados nas notas
+  try {
+    await repo.syncFromInvoices();
+  } catch (error) {
+    console.error("Falha ao sincronizar clientes a partir das notas:", error);
+  }
+
+  const clients = await repo.findManyWithInvoiceCounts();
 
   return (
     <div>
@@ -42,6 +49,7 @@ export default async function AdminClientsPage() {
               <tr className="border-b border-border bg-secondary/30">
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Razão Social</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">CNPJ</th>
+                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Notas</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cidade</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Estado</th>
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground">Ações</th>
@@ -52,6 +60,7 @@ export default async function AdminClientsPage() {
                 <tr key={c.id} className="border-b border-border/50 hover:bg-secondary/20 transition-colors group">
                   <td className="px-4 py-3 font-medium text-foreground">{c.razaoSocial}</td>
                   <td className="px-4 py-3 text-muted-foreground">{c.cnpj}</td>
+                  <td className="px-4 py-3 text-right text-muted-foreground">{c.invoiceCount}</td>
                   <td className="px-4 py-3 text-muted-foreground">{c.city || "—"}</td>
                   <td className="px-4 py-3 text-muted-foreground">{c.state || "—"}</td>
                   <td className="px-4 py-3">
@@ -65,7 +74,7 @@ export default async function AdminClientsPage() {
               ))}
               {clients.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center">
+                  <td colSpan={6} className="px-4 py-10 text-center">
                     <Users size={28} className="mx-auto text-muted-foreground/50 mb-2" />
                     <p className="text-muted-foreground text-sm">Nenhum cliente cadastrado ainda.</p>
                     <Link href="/admin/clients/novo" className="text-primary text-sm hover:underline mt-1 inline-block">

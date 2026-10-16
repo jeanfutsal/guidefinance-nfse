@@ -74,6 +74,9 @@ export default async function DashboardPage() {
     // Dashboard financeiro continua funcionando mesmo sem dados operacionais
   }
 
+  // O card de tickets só aparece quando existe ao menos um chamado
+  const hasTickets = ticketStatusData.some((d) => d.value > 0);
+
   return (
     <div>
       <Header
@@ -168,54 +171,62 @@ export default async function DashboardPage() {
         </div>
 
         {/* Fase 2.4: Operação — processos e tickets por status */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {role === "admin" && (
-            <div className="glass-card rounded-xl p-5 border border-border">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-sm font-semibold text-foreground">Processos por Status</h2>
-                  <p className="text-xs text-muted-foreground">Acompanhamento operacional</p>
-                </div>
-                <Link
-                  href="/admin/processos"
-                  className="text-xs text-primary hover:underline flex items-center gap-1"
-                >
-                  <Workflow size={12} />
-                  Ver processos
-                </Link>
-              </div>
-              <StatusDonutChart
-                data={processStatusData}
-                emptyMessage="Nenhum processo cadastrado ainda."
-              />
-            </div>
-          )}
-
-          <div
-            className={`glass-card rounded-xl p-5 border border-border ${
-              role !== "admin" ? "lg:col-span-2" : ""
-            }`}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-sm font-semibold text-foreground">
-                  {role === "admin" ? "Tickets por Status" : "Meus Tickets por Status"}
-                </h2>
-                <p className="text-xs text-muted-foreground">Chamados de suporte</p>
-              </div>
-              <Link
-                href={role === "admin" ? "/admin/tickets" : "/tickets"}
-                className="text-xs text-primary hover:underline flex items-center gap-1"
+        {(role === "admin" || hasTickets) && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {role === "admin" && (
+              <div
+                className={`glass-card rounded-xl p-5 border border-border ${
+                  hasTickets ? "" : "lg:col-span-2"
+                }`}
               >
-                Ver tickets <ArrowRight size={12} />
-              </Link>
-            </div>
-            <StatusDonutChart
-              data={ticketStatusData}
-              emptyMessage="Nenhum chamado aberto ainda."
-            />
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-sm font-semibold text-foreground">Processos por Status</h2>
+                    <p className="text-xs text-muted-foreground">Acompanhamento operacional</p>
+                  </div>
+                  <Link
+                    href="/admin/processos"
+                    className="text-xs text-primary hover:underline flex items-center gap-1"
+                  >
+                    <Workflow size={12} />
+                    Ver processos
+                  </Link>
+                </div>
+                <StatusDonutChart
+                  data={processStatusData}
+                  emptyMessage="Nenhum processo cadastrado ainda."
+                />
+              </div>
+            )}
+
+            {hasTickets && (
+              <div
+                className={`glass-card rounded-xl p-5 border border-border ${
+                  role !== "admin" ? "lg:col-span-2" : ""
+                }`}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-sm font-semibold text-foreground">
+                      {role === "admin" ? "Tickets por Status" : "Meus Tickets por Status"}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">Chamados de suporte</p>
+                  </div>
+                  <Link
+                    href={role === "admin" ? "/admin/tickets" : "/tickets"}
+                    className="text-xs text-primary hover:underline flex items-center gap-1"
+                  >
+                    Ver tickets <ArrowRight size={12} />
+                  </Link>
+                </div>
+                <StatusDonutChart
+                  data={ticketStatusData}
+                  emptyMessage="Nenhum chamado aberto ainda."
+                />
+              </div>
+            )}
           </div>
-        </div>
+        )}
 
         {/* Top clients bar chart */}
         {stats.topClients.length > 0 && (

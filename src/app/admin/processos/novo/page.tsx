@@ -4,8 +4,8 @@ import { requireAdmin } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
-export default function NewProcessPage() {
-  requireAdmin();
+export default async function NewProcessPage() {
+  await requireAdmin();
   return (
     <div>
       <Header title="Processos" subtitle="Criar novo processo de acompanhamento" />

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { InvoiceRepositoryProvider } from "@/infra/repositories/InvoiceRepositoryProvider";
 import { InvoiceFilters } from "@/core/repositories/InvoiceRepository";
+import { PrismaClientRepository } from "@/infra/repositories/PrismaClientRepository";
+import { prisma } from "@/infra/db/prisma";
 import { getSession } from "@/lib/session";
 
 const repository = InvoiceRepositoryProvider.getServerRepository();
@@ -86,7 +88,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Auto-vinculação de clientes (Fase: cadastro automático):
+    // se o CNPJ do tomador ainda não existir, cria o Client e vincula a nota.
+    let clientId: string | null = null;
+    try {
+      const clientRepo = new PrismaClientRepository();
+      const existingClient = await clientRepo.findByCnpj(body.tomadorCnpj);
+      const client =
+        existingClient ??
+        (await clientRepo.save({
+          cnpj: body.tomadorCnpj,
+          razaoSocial: body.tomadorName || body.tomadorCnpj,
+          city: body.tomadorCity || undefined,
+          state: body.tomadorState || undefined,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }));
+      clientId = client.id;
+    } catch (err) {
+      console.error("Falha ao criar/vincular cliente do tomador:", err);
+    }
+
     const savedInvoice = await repository.save(body);
+
+    if (clientId && savedInvoice.id) {
+      try {
+        await prisma.invoice.update({
+          where: { id: savedInvoice.id },
+          data: { clientId },
+        });
+      } catch (err) {
+        console.error("Falha ao vincular nota ao cliente:", err);
+      }
+    }
 
     return NextResponse.json(savedInvoice);
   } catch (error) {

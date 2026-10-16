@@ -229,16 +229,18 @@ export default function NotasPage() {
             <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground text-sm transition-all border border-border">
               <Filter size={14} /> Filtros
             </button>
-            <button
-              onClick={() => setShowArchived((v) => !v)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all border ${
-                showArchived
-                  ? "bg-primary/10 text-primary border-primary/20"
-                  : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
-              }`}
-            >
-              <Archive size={14} /> {showArchived ? "Ver ativas" : "Arquivadas"}
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setShowArchived((v) => !v)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all border ${
+                  showArchived
+                    ? "bg-primary/10 text-primary border-primary/20"
+                    : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary"
+                }`}
+              >
+                <Archive size={14} /> {showArchived ? "Ver ativas" : "Arquivadas"}
+              </button>
+            )}
             <ExportCsvButton filename="notas-fiscais.csv" columns={NOTAS_CSV_COLUMNS} data={invoices} />
             {isAdmin && (
               <Link href="/upload" className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm hover:opacity-90 transition-opacity">
@@ -318,7 +320,7 @@ export default function NotasPage() {
                             >
                               <Eye size={14} />
                             </button>
-                            {showArchived ? (
+                            {isAdmin && (showArchived ? (
                               <button
                                 onClick={() => handleArchive(inv.id!, false)}
                                 disabled={deleting === inv.id}
@@ -336,7 +338,7 @@ export default function NotasPage() {
                               >
                                 <Archive size={14} />
                               </button>
-                            )}
+                            ))}
                           </div>
                         </td>
                       </tr>
