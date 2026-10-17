@@ -11,6 +11,18 @@ declare module "pdf-parse" {
     version: string;
   }
 
-  function pdfParse(buffer: Buffer): Promise<PdfParseResult>;
+  /** Página do pdf.js exposta pelo callback pagerender. */
+  interface PdfParsePage {
+    getTextContent(): Promise<{
+      items: { str: string; transform?: number[]; width?: number }[];
+    }>;
+  }
+
+  interface PdfParseOptions {
+    /** Permite montar o texto da página com lógica própria (ex.: espaçamento). */
+    pagerender?: (pageData: PdfParsePage) => Promise<string>;
+  }
+
+  function pdfParse(buffer: Buffer, options?: PdfParseOptions): Promise<PdfParseResult>;
   export default pdfParse;
 }

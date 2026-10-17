@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractInvoiceData } from "@/core/use-cases/extractInvoiceData";
 import { getSession } from "@/lib/session";
+import { assemblePdfPage } from "@/lib/pdfText";
 import pdfParse from "pdf-parse";
 
 export const runtime = "nodejs";
@@ -31,8 +32,14 @@ export async function POST(request: NextRequest) {
     // pdf-parse 1.1.1 trabalha com Buffer do Node
     const buffer = Buffer.from(arrayBuffer);
 
-    // Extrai o texto do PDF
-    const pdfData = await pdfParse(buffer);
+    // Extrai o texto do PDF (pagerender mantem os espacos visuais entre itens;
+    // o padrao do pdf-parse concatena e colava nomes/descricoes)
+    const pdfData = await pdfParse(buffer, {
+      pagerender: async (pageData) => {
+        const content = await pageData.getTextContent();
+        return assemblePdfPage(content.items);
+      },
+    });
     const rawText = pdfData.text;
 
     if (!rawText || rawText.trim() === "") {
