@@ -44,4 +44,33 @@ test.describe.serial("CRUD de clientes (admin)", () => {
 
     await expect(page.getByRole("row", { name: razaoSocial })).toHaveCount(0);
   });
+
+  test("explorer: busca filtra, expansao lista notas e clique abre modal", async ({ page }) => {
+    await login(page, ADMIN);
+    await page.goto("/admin/clients");
+
+    // Busca instantanea por nome
+    const search = page.getByPlaceholder("Buscar cliente por nome ou CNPJ");
+    await search.fill("CONDOR");
+    await expect(page.getByRole("row", { name: /CONDOR SUPER CENTER LTDA/ })).toHaveCount(1);
+    await expect(page.getByRole("row", { name: /ANA CAROLINA PETRAGLIA LTDA/ })).toHaveCount(0);
+
+    // Expande o cliente e aguarda as notas carregarem
+    await page.getByRole("row", { name: /CONDOR SUPER CENTER LTDA/ }).click();
+    await page
+      .locator("tr[title='Ver todos os dados da nota']")
+      .first()
+      .waitFor({ state: "visible", timeout: 15_000 });
+
+    // Clique na nota abre o modal com todos os dados
+    await page.locator("tr[title='Ver todos os dados da nota']").first().click();
+    await expect(page.getByRole("heading", { name: "NFS-e nº" })).toBeVisible();
+    await expect(page.getByText("Descrição do Serviço").first()).toBeVisible();
+    await page.locator("button[title='Fechar']").click();
+    await expect(page.getByRole("heading", { name: "NFS-e nº" })).toHaveCount(0);
+
+    // Limpar busca restaura a listagem completa
+    await page.getByTitle("Limpar busca").click();
+    await expect(search).toHaveValue("");
+  });
 });

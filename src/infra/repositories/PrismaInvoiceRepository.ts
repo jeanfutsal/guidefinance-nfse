@@ -71,6 +71,20 @@ export class PrismaInvoiceRepository implements InvoiceRepository {
     return invoice ? this.mapToEntity(invoice) : null;
   }
 
+  /**
+   * Notas de um cliente tomador: vinculadas por clientId ou,
+   * fallback, por CNPJ do tomador (notas pré-vínculo automático).
+   */
+  async findByClient(client: { id: string; cnpj: string }): Promise<Invoice[]> {
+    const invoices = await prisma.invoice.findMany({
+      where: {
+        OR: [{ clientId: client.id }, { tomadorCnpj: client.cnpj }],
+      },
+      orderBy: { issueDate: "desc" },
+    });
+    return invoices.map(this.mapToEntity);
+  }
+
   async delete(id: string): Promise<boolean> {
     try {
       await prisma.invoice.delete({
