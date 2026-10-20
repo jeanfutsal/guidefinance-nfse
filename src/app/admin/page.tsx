@@ -158,6 +158,33 @@ export default async function AdminPage() {
           </div>
         </div>
 
+        <div className="mb-4">
+          <h2 className="text-sm font-semibold text-foreground">
+            Acesso Rápido
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Atalhos para as seções de gestão
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {cards.map(({ href, icon: Icon, title, desc, color }) => (
+            <Link
+              key={href}
+              href={href}
+              className="glass-card rounded-xl p-5 border border-border flex flex-col gap-3"
+            >
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color}`}>
+                <Icon size={18} />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground text-sm">{title}</p>
+                <p className="text-xs text-muted-foreground mt-1">{desc}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+
         {/* Indicadores reais do banco */}
         <div>
           <div className="mb-4">
@@ -262,32 +289,6 @@ export default async function AdminPage() {
           </div>
         </div>
 
-        <div className="mb-4">
-          <h2 className="text-sm font-semibold text-foreground">
-            Acesso Rápido
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            Atalhos para as seções de gestão
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {cards.map(({ href, icon: Icon, title, desc, color }) => (
-            <Link
-              key={href}
-              href={href}
-              className="glass-card rounded-xl p-5 border border-border flex flex-col gap-3"
-            >
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color}`}>
-                <Icon size={18} />
-              </div>
-              <div>
-                <p className="font-semibold text-foreground text-sm">{title}</p>
-                <p className="text-xs text-muted-foreground mt-1">{desc}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
       </div>
     </div>
   );
