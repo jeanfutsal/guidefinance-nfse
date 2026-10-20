@@ -7,6 +7,10 @@ import { PrismaProcessRepository } from "@/infra/repositories/PrismaProcessRepos
 import { PrismaTicketRepository } from "@/infra/repositories/PrismaTicketRepository";
 import type { DashboardStats } from "@/core/entities/Invoice";
 import {
+  BillingAreaChart,
+  ClientsBarChart,
+} from "@/components/charts/InvoiceCharts";
+import {
   ShieldCheck,
   Users,
   Building2,
@@ -16,6 +20,8 @@ import {
   LifeBuoy,
   DollarSign,
   Receipt,
+  TrendingUp,
+  ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -218,6 +224,41 @@ export default async function AdminPage() {
               href="/admin/tickets"
               linkLabel="Ver tickets"
             />
+          </div>
+        </div>
+
+        {/* Gráficos: faturamento mensal e top clientes */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="glass-card rounded-xl p-5 border border-border">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <TrendingUp size={16} className="text-indigo-400" />
+                Evolução Mensal do Faturamento
+              </h2>
+              <Link
+                href="/relatorios"
+                className="text-xs text-primary hover:underline flex items-center gap-1"
+              >
+                Ver relatórios <ArrowRight size={12} />
+              </Link>
+            </div>
+            <BillingAreaChart data={stats.monthlyBilling} />
+          </div>
+
+          <div className="glass-card rounded-xl p-5 border border-border">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Users size={16} className="text-cyan-400" />
+                Maiores Clientes (Tomadores)
+              </h2>
+              <Link
+                href="/admin/clients"
+                className="text-xs text-primary hover:underline flex items-center gap-1"
+              >
+                Ver clientes <ArrowRight size={12} />
+              </Link>
+            </div>
+            <ClientsBarChart data={stats.topClients} />
           </div>
         </div>
 

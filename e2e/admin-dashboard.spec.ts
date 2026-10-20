@@ -46,6 +46,14 @@ test.describe("Dashboard admin (indicadores)", () => {
         .filter({ hasText: "Tickets em Aberto" })
     ).toBeVisible();
 
+    // Gráficos de faturamento mensal e top clientes
+    await expect(
+      page.getByRole("heading", { name: "Evolução Mensal do Faturamento" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Maiores Clientes (Tomadores)" })
+    ).toBeVisible();
+
     // Acesso rápido mantém os atalhos
     await expect(
       page.getByRole("heading", { name: "Acesso Rápido" })
