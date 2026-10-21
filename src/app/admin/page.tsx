@@ -158,31 +158,39 @@ export default async function AdminPage() {
           </div>
         </div>
 
-        <div className="mb-4">
-          <h2 className="text-sm font-semibold text-foreground">
-            Acesso Rápido
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            Atalhos para as seções de gestão
-          </p>
-        </div>
+        {/* Gráficos: faturamento mensal e top clientes */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="glass-card rounded-xl p-5 border border-border">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <TrendingUp size={16} className="text-indigo-400" />
+                Evolução Mensal do Faturamento
+              </h2>
+              <Link
+                href="/relatorios"
+                className="text-xs text-primary hover:underline flex items-center gap-1"
+              >
+                Ver relatórios <ArrowRight size={12} />
+              </Link>
+            </div>
+            <BillingAreaChart data={stats.monthlyBilling} />
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {cards.map(({ href, icon: Icon, title, desc, color }) => (
-            <Link
-              key={href}
-              href={href}
-              className="glass-card rounded-xl p-5 border border-border flex flex-col gap-3"
-            >
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color}`}>
-                <Icon size={18} />
-              </div>
-              <div>
-                <p className="font-semibold text-foreground text-sm">{title}</p>
-                <p className="text-xs text-muted-foreground mt-1">{desc}</p>
-              </div>
-            </Link>
-          ))}
+          <div className="glass-card rounded-xl p-5 border border-border">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Users size={16} className="text-cyan-400" />
+                Maiores Clientes (Tomadores)
+              </h2>
+              <Link
+                href="/admin/clients"
+                className="text-xs text-primary hover:underline flex items-center gap-1"
+              >
+                Ver clientes <ArrowRight size={12} />
+              </Link>
+            </div>
+            <ClientsBarChart data={stats.topClients} />
+          </div>
         </div>
 
         {/* Indicadores reais do banco */}
@@ -254,39 +262,31 @@ export default async function AdminPage() {
           </div>
         </div>
 
-        {/* Gráficos: faturamento mensal e top clientes */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="glass-card rounded-xl p-5 border border-border">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                <TrendingUp size={16} className="text-indigo-400" />
-                Evolução Mensal do Faturamento
-              </h2>
-              <Link
-                href="/relatorios"
-                className="text-xs text-primary hover:underline flex items-center gap-1"
-              >
-                Ver relatórios <ArrowRight size={12} />
-              </Link>
-            </div>
-            <BillingAreaChart data={stats.monthlyBilling} />
-          </div>
+        <div className="mb-4">
+          <h2 className="text-sm font-semibold text-foreground">
+            Acesso Rápido
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Atalhos para as seções de gestão
+          </p>
+        </div>
 
-          <div className="glass-card rounded-xl p-5 border border-border">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                <Users size={16} className="text-cyan-400" />
-                Maiores Clientes (Tomadores)
-              </h2>
-              <Link
-                href="/admin/clients"
-                className="text-xs text-primary hover:underline flex items-center gap-1"
-              >
-                Ver clientes <ArrowRight size={12} />
-              </Link>
-            </div>
-            <ClientsBarChart data={stats.topClients} />
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {cards.map(({ href, icon: Icon, title, desc, color }) => (
+            <Link
+              key={href}
+              href={href}
+              className="glass-card rounded-xl p-5 border border-border flex flex-col gap-3"
+            >
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color}`}>
+                <Icon size={18} />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground text-sm">{title}</p>
+                <p className="text-xs text-muted-foreground mt-1">{desc}</p>
+              </div>
+            </Link>
+          ))}
         </div>
 
       </div>
