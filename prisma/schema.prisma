@@ -233,3 +233,21 @@ model Notification {
   @@index([userId])
   @@index([read])
 }
+
+// Modelo de Auditoria - registro de alterações em entidades do sistema
+model AuditLog {
+  id            String   @id @default(uuid())
+  entityType    String   // "Client" | "Supplier" | "Invoice" | "Process" | "Ticket" | "User"
+  entityId      String   // ID da entidade alterada
+  action        String   // "CREATE" | "UPDATE" | "DELETE" | "ARCHIVE" | "RESTORE"
+  fieldName     String?  // Nome do campo alterado (para UPDATE campo a campo)
+  oldValue      String?  // JSON string do valor anterior
+  newValue      String?  // JSON string do novo valor
+  changedById   String   // ID do usuário que realizou a alteração
+  changedByName String?  // Nome do usuário (desnormalizado para exibição)
+  changedAt     DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([changedAt])
+  @@index([changedById])
+}

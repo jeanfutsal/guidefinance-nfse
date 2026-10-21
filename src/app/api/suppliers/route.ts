@@ -33,7 +33,10 @@ export async function POST(request: NextRequest) {
     if (!body.cnpj || !body.razaoSocial) {
       return NextResponse.json({ error: "CNPJ e Razão Social são obrigatórios." }, { status: 400 });
     }
-    const saved = await repo.save(body);
+    const saved = await repo.save(body, {
+      changedById: session.user.id,
+      changedByName: session.user.name ?? undefined,
+    });
     return NextResponse.json(saved, { status: 201 });
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";

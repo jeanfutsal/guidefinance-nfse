@@ -1,10 +1,16 @@
 import { ClientRepository } from "../../repositories/ClientRepository";
 import { Client } from "../../entities/Client";
 import { prisma } from "../db/prisma";
+import { PrismaAuditLogRepository } from "./PrismaAuditLogRepository";
 import type { Prisma, Client as ClientDb } from "@prisma/client";
 
 export class PrismaClientRepository implements ClientRepository {
-  async save(client: Omit<Client, "id"> & { id?: string }): Promise<Client> {
+  private audit = new PrismaAuditLogRepository();
+
+  async save(
+    client: Omit<Client, "id"> & { id?: string },
+    auditCtx?: { changedById: string; changedByName?: string }
+  ): Promise<Client> {
     const data = {
       cnpj: client.cnpj,
       razaoSocial: client.razaoSocial,
@@ -17,10 +23,32 @@ export class PrismaClientRepository implements ClientRepository {
     };
 
     let result;
+    let action: string;
+    let oldValue: string | null = null;
+    let fieldName: string | undefined;
+
     if (client.id) {
+      const existing = await prisma.client.findUnique({ where: { id: client.id } });
+      oldValue = existing ? JSON.stringify(existing) : null;
       result = await prisma.client.update({ where: { id: client.id }, data });
+      action = "UPDATE";
+      fieldName = undefined; // múltiplos campos, registrar como update geral
     } else {
       result = await prisma.client.create({ data });
+      action = "CREATE";
+    }
+
+    if (auditCtx) {
+      await this.audit.create({
+        entityType: "Client",
+        entityId: result.id,
+        action,
+        fieldName,
+        oldValue,
+        newValue: JSON.stringify(result),
+        changedById: auditCtx.changedById,
+        changedByName: auditCtx.changedByName ?? null,
+      });
     }
     return this.mapToEntity(result);
   }
@@ -91,9 +119,25 @@ export class PrismaClientRepository implements ClientRepository {
     return created;
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(
+    id: string,
+    auditCtx?: { changedById: string; changedByName?: string }
+  ): Promise<boolean> {
     try {
+      const existing = await prisma.client.findUnique({ where: { id } });
       await prisma.client.delete({ where: { id } });
+      if (auditCtx && existing) {
+        await this.audit.create({
+          entityType: "Client",
+          entityId: id,
+          action: "DELETE",
+          fieldName: undefined,
+          oldValue: JSON.stringify(existing),
+          newValue: null,
+          changedById: auditCtx.changedById,
+          changedByName: auditCtx.changedByName ?? null,
+        });
+      }
       return true;
     } catch {
       return false;

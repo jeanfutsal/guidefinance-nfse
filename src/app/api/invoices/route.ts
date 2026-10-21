@@ -109,7 +109,10 @@ export async function POST(request: NextRequest) {
       console.error("Falha ao criar/vincular cliente do tomador:", err);
     }
 
-    const savedInvoice = await repository.save(body);
+    const savedInvoice = await repository.save(body, {
+      changedById: session.user.id,
+      changedByName: session.user.name ?? undefined,
+    });
 
     if (clientId && savedInvoice.id) {
       try {
@@ -155,7 +158,10 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const success = await repository.setArchived(id, archived);
+    const success = await repository.setArchived(id, archived, {
+      changedById: session.user.id,
+      changedByName: session.user.name ?? undefined,
+    });
     if (!success) {
       return NextResponse.json(
         { error: "Nota fiscal não encontrada." },
@@ -195,7 +201,10 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const success = await repository.delete(id);
+    const success = await repository.delete(id, {
+      changedById: session.user.id,
+      changedByName: session.user.name ?? undefined,
+    });
 
     if (!success) {
       return NextResponse.json(

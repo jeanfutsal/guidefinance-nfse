@@ -15,8 +15,12 @@ export interface InvoiceFilters {
 export interface InvoiceRepository {
   /**
    * Salva ou atualiza uma nota fiscal
+   * @param auditCtx contexto de quem realizou a alteração (para log de auditoria)
    */
-  save(invoice: Omit<Invoice, "id"> & { id?: string }): Promise<Invoice>;
+  save(
+    invoice: Omit<Invoice, "id"> & { id?: string },
+    auditCtx?: { changedById: string; changedByName?: string }
+  ): Promise<Invoice>;
 
   /**
    * Busca todas as notas fiscais que satisfaçam os filtros
@@ -35,14 +39,23 @@ export interface InvoiceRepository {
 
   /**
    * Exclui uma nota fiscal pelo ID
+   * @param auditCtx contexto de quem realizou a alteração (para log de auditoria)
    */
-  delete(id: string): Promise<boolean>;
+  delete(
+    id: string,
+    auditCtx?: { changedById: string; changedByName?: string }
+  ): Promise<boolean>;
 
   /**
    * Arquiva ou restaura uma nota fiscal (soft-delete).
    * Notas arquivadas ficam ocultas do dashboard e da listagem padrão.
+   * @param auditCtx contexto de quem realizou a alteração (para log de auditoria)
    */
-  setArchived(id: string, archived: boolean): Promise<boolean>;
+  setArchived(
+    id: string,
+    archived: boolean,
+    auditCtx?: { changedById: string; changedByName?: string }
+  ): Promise<boolean>;
 
   /**
    * Calcula as estatísticas consolidadas para o dashboard financeiro

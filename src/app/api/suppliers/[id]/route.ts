@@ -39,7 +39,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     const body = await request.json();
-    const updated = await repo.save({ ...existing, ...body, id });
+    const updated = await repo.save(
+      { ...existing, ...body, id },
+      {
+        changedById: session.user.id,
+        changedByName: session.user.name ?? undefined,
+      }
+    );
     return NextResponse.json(updated);
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
@@ -58,7 +64,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
   try {
     const { id } = await params;
-    const success = await repo.delete(id);
+    const success = await repo.delete(id, {
+      changedById: session.user.id,
+      changedByName: session.user.name ?? undefined,
+    });
     if (!success) {
       return NextResponse.json({ error: "Fornecedor não encontrado." }, { status: 404 });
     }

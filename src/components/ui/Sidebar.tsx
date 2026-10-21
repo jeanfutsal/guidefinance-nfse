@@ -15,6 +15,7 @@ import {
   Shield,
   Users,
   LifeBuoy,
+  DatabaseZap,
 } from "lucide-react";
 import { useSidebar } from "./SidebarContext";
 import { authClient } from "@/lib/auth-client";
@@ -24,6 +25,11 @@ import { authClient } from "@/lib/auth-client";
 // Item exibido apenas para usuários com papel admin
 const adminNavItem = { href: "/admin", icon: Shield, label: "Administração" };
 const usersNavItem = { href: "/admin/usuarios", icon: Users, label: "Usuários" };
+const auditoriaNavItem = {
+  href: "/admin/auditoria",
+  icon: DatabaseZap,
+  label: "Auditoria",
+};
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
@@ -40,7 +46,7 @@ export function Sidebar() {
     // Tickets exige sessão (protegido no proxy) — esconde para o visitante anônimo
     ...(session ? [{ href: "/tickets", icon: LifeBuoy, label: "Tickets" }] : []),
     { href: "/relatorios", icon: BarChart3, label: "Relatórios" },
-    ...(isAdmin ? [adminNavItem, usersNavItem] : []),
+    ...(isAdmin ? [adminNavItem, usersNavItem, auditoriaNavItem] : []),
   ];
 
   return (

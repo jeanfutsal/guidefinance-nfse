@@ -1,10 +1,16 @@
 import { InvoiceRepository, InvoiceFilters } from "../../core/repositories/InvoiceRepository";
 import { Invoice, DashboardStats } from "../../core/entities/Invoice";
 import { prisma } from "../db/prisma";
+import { PrismaAuditLogRepository } from "./PrismaAuditLogRepository";
 import type { Prisma, Invoice as InvoiceDb } from "@prisma/client";
 
 export class PrismaInvoiceRepository implements InvoiceRepository {
-  async save(invoice: Omit<Invoice, "id"> & { id?: string }): Promise<Invoice> {
+  private audit = new PrismaAuditLogRepository();
+
+  async save(
+    invoice: Omit<Invoice, "id"> & { id?: string },
+    auditCtx?: { changedById: string; changedByName?: string }
+  ): Promise<Invoice> {
     const data = {
       accessKey: invoice.accessKey,
       number: invoice.number,
@@ -30,11 +36,17 @@ export class PrismaInvoiceRepository implements InvoiceRepository {
     };
 
     let result;
+    let action: string;
+    let oldValue: string | null = null;
+
     if (invoice.id) {
+      const existing = await prisma.invoice.findUnique({ where: { id: invoice.id } });
+      oldValue = existing ? JSON.stringify(existing) : null;
       result = await prisma.invoice.update({
         where: { id: invoice.id },
         data,
       });
+      action = "UPDATE";
     } else {
       // Tenta criar. Se a chave de acesso já existir, atualiza
       result = await prisma.invoice.upsert({
@@ -42,8 +54,21 @@ export class PrismaInvoiceRepository implements InvoiceRepository {
         update: data,
         create: data,
       });
+      action = "CREATE";
     }
 
+    if (auditCtx) {
+      await this.audit.create({
+        entityType: "Invoice",
+        entityId: result.id,
+        action,
+        fieldName: undefined,
+        oldValue,
+        newValue: JSON.stringify(result),
+        changedById: auditCtx.changedById,
+        changedByName: auditCtx.changedByName ?? null,
+      });
+    }
     return this.mapToEntity(result);
   }
 
@@ -85,23 +110,56 @@ export class PrismaInvoiceRepository implements InvoiceRepository {
     return invoices.map(this.mapToEntity);
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(
+    id: string,
+    auditCtx?: { changedById: string; changedByName?: string }
+  ): Promise<boolean> {
     try {
+      const existing = await prisma.invoice.findUnique({ where: { id } });
       await prisma.invoice.delete({
         where: { id },
       });
+      if (auditCtx && existing) {
+        await this.audit.create({
+          entityType: "Invoice",
+          entityId: id,
+          action: "DELETE",
+          fieldName: undefined,
+          oldValue: JSON.stringify(existing),
+          newValue: null,
+          changedById: auditCtx.changedById,
+          changedByName: auditCtx.changedByName ?? null,
+        });
+      }
       return true;
     } catch {
       return false;
     }
   }
 
-  async setArchived(id: string, archived: boolean): Promise<boolean> {
+  async setArchived(
+    id: string,
+    archived: boolean,
+    auditCtx?: { changedById: string; changedByName?: string }
+  ): Promise<boolean> {
     try {
+      const existing = await prisma.invoice.findUnique({ where: { id } });
       await prisma.invoice.update({
         where: { id },
         data: { archived },
       });
+      if (auditCtx && existing) {
+        await this.audit.create({
+          entityType: "Invoice",
+          entityId: id,
+          action: archived ? "ARCHIVE" : "RESTORE",
+          fieldName: "archived",
+          oldValue: JSON.stringify({ archived: existing.archived }),
+          newValue: JSON.stringify({ archived }),
+          changedById: auditCtx.changedById,
+          changedByName: auditCtx.changedByName ?? null,
+        });
+      }
       return true;
     } catch {
       return false;
