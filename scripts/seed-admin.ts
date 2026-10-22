@@ -4,17 +4,25 @@
  * Uso:
  *   npx tsx --env-file=.env scripts/seed-admin.ts
  *
- * Variáveis opcionais:
- *   ADMIN_EMAIL    (padrão: admin@guidefinance.local)
- *   ADMIN_PASSWORD (padrão: REDACTED — TROQUE em produção)
- *   ADMIN_NAME     (padrão: Administrador)
+ * Variáveis obrigatórias:
+ *   ADMIN_EMAIL    (ex: admin@suaempresa.com)
+ *   ADMIN_PASSWORD (senha forte — não commite este valor)
+ *   ADMIN_NAME     (ex: Administrador)
+ *
+ * Nunca deixe senha hardcoded neste arquivo.
  */
 import { auth } from "../src/lib/auth";
 import { prisma } from "../src/infra/db/prisma";
 
-const email = process.env.ADMIN_EMAIL ?? "admin@guidefinance.local";
-const password = process.env.ADMIN_PASSWORD ?? "REDACTED";
+const email = process.env.ADMIN_EMAIL;
+const password = process.env.ADMIN_PASSWORD;
 const name = process.env.ADMIN_NAME ?? "Administrador";
+
+if (!email || !password) {
+  console.error("ERRO: ADMIN_EMAIL e ADMIN_PASSWORD são obrigatórios.");
+  process.exitCode = 1;
+  process.exit(1);
+}
 
 async function main() {
   const existing = await prisma.user.findUnique({ where: { email } });
