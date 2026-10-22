@@ -3,6 +3,8 @@ import Link from "next/link";
 import { DatabaseZap } from "lucide-react";
 import AuditTable from "./AuditTable";
 
+// Rotas de auditoria expostas para clientes, fornecedores, notas fiscais,
+// processos, tickets e usuários. Acompanha quem alterou, quando e o que mudou.
 export const dynamic = "force-dynamic";
 
 export default async function AuditoriaPage() {
