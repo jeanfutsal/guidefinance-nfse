@@ -17,6 +17,8 @@ interface MetricCardProps {
   linkLabel?: string;
   /** Variação percentual opcional (ex: evolução mensal) */
   trend?: { value: number; label: string };
+  /** Quando true, exibe skeleton de carregamento em vez do conteúdo real */
+  loading?: boolean;
 }
 
 const colorMap = {
@@ -74,10 +76,50 @@ export function MetricCard({
   href,
   linkLabel = "Ver detalhes",
   trend,
+  loading = false,
 }: MetricCardProps) {
   const colors = colorMap[color];
   const trendPositive = trend && trend.value > 0;
   const trendNegative = trend && trend.value < 0;
+
+  if (loading) {
+    const className = `glass-card rounded-xl p-5 border ${colors.border} flex flex-col gap-3 animate-pulse`;
+    const skeleton = (h: string, w: string) => (
+      <div className="bg-muted rounded animate-pulse" style={{ height: h, width: w }} />
+    );
+
+    if (href) {
+      return (
+        <Link href={href} className={className}>
+          <div className="flex items-start justify-between">
+            <div className="w-10 h-10 rounded-lg bg-muted">{skeleton("100%", "100%")}</div>
+            <div className="w-20">{skeleton("10px", "100%")}</div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="h-4 w-2/3 mb-1">{skeleton("100%", "100%")}</div>
+            <div className="h-8 w-1/2">{skeleton("100%", "100%")}</div>
+            <div className="h-4 w-1/3 mt-1">{skeleton("100%", "100%")}</div>
+          </div>
+          <div className="h-4 w-1/4">{skeleton("100%", "100%")}</div>
+        </Link>
+      );
+    }
+
+    return (
+      <div className={className}>
+        <div className="flex items-start justify-between">
+          <div className="w-10 h-10 rounded-lg bg-muted">{skeleton("100%", "100%")}</div>
+          <div className="w-20">{skeleton("10px", "100%")}</div>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="h-4 w-2/3 mb-1">{skeleton("100%", "100%")}</div>
+          <div className="h-8 w-1/2">{skeleton("100%", "100%")}</div>
+          <div className="h-4 w-1/3 mt-1">{skeleton("100%", "100%")}</div>
+        </div>
+        <div className="h-4 w-1/4">{skeleton("100%", "100%")}</div>
+      </div>
+    );
+  }
 
   const content = (
     <>
