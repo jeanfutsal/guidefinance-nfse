@@ -140,7 +140,7 @@ export function Header({ title, subtitle }: HeaderProps) {
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 mt-2 w-56 glass-panel rounded-xl py-1.5 shadow-xl z-50">
+            <div className="absolute right-0 mt-2 w-56 glass-panel rounded-xl py-1.5 shadow-xl z-50 transition-all duration-200">
               <div className="px-4 py-2.5 border-b border-border">
                 <p className="text-sm font-medium text-foreground truncate">
                   {session?.user?.name || "Usuário"}

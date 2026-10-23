@@ -48,9 +48,13 @@ export function StatCard({ title, value, subtitle, icon, trend, color = "indigo"
   const trendNegative = trend && trend.value < 0;
 
   return (
-    <div className={`glass-card rounded-xl p-5 border ${colors.border} flex flex-col gap-3`}>
+    <div
+      className={`glass-card rounded-xl p-5 border ${colors.border} flex flex-col gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-${color === "indigo" ? "indigo" : color === "cyan" ? "cyan" : color === "emerald" ? "emerald" : color === "amber" ? "amber" : "rose"}-400/50 group`}
+    >
       <div className="flex items-start justify-between">
-        <div className={`w-10 h-10 rounded-lg ${colors.bg} flex items-center justify-center ${colors.icon}`}>
+        <div
+          className={`w-10 h-10 rounded-lg ${colors.bg} flex items-center justify-center ${colors.icon} transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110`}
+        >
           {icon}
         </div>
         {trend && (
@@ -72,7 +76,7 @@ export function StatCard({ title, value, subtitle, icon, trend, color = "indigo"
       </div>
 
       {trend && (
-        <p className={`text-xs ${trendPositive ? "text-emerald-400" : trendNegative ? "text-rose-400" : "text-muted-foreground"}`}>
+        <p className={`text-xs font-medium ${trendPositive ? "text-emerald-400" : trendNegative ? "text-rose-400" : "text-muted-foreground"}`}>
           {trend.label}
         </p>
       )}

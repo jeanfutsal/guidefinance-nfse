@@ -195,13 +195,25 @@ export default async function AdminPage() {
 
         {/* Indicadores reais do banco */}
         <div>
-          <div className="mb-4">
-            <h2 className="text-sm font-semibold text-foreground">
-              Indicadores Gerais
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Dados consolidados do sistema, atualizados a cada acesso
-            </p>
+          <nav className="mb-6 flex items-center gap-2 text-xs">
+            <a
+              href="/"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Dashboard
+            </a>
+            <span className="text-muted-foreground">/</span>
+            <span className="text-foreground">Admin</span>
+          </nav>
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">
+                Indicadores Gerais
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Dados consolidados do sistema, atualizados a cada acesso
+              </p>
+            </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <MetricCard
