@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { useToast } from "@/components/ui/Toast";
 
 interface AdminUser {
   id: string;
@@ -56,6 +57,7 @@ export function UsersManager() {
 
   const { data: session } = authClient.useSession();
   const currentUserId = session?.user?.id;
+  const { addToast } = useToast();
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -73,6 +75,11 @@ export function UsersManager() {
     });
     if (error) {
       setListError(error.message ?? "Erro ao carregar usuários.");
+      addToast({
+        title: "Erro ao carregar usuários",
+        description: error.message ?? "Tente novamente.",
+        type: "error",
+      });
     } else {
       setUsers(
         (data?.users ?? []).map((u) => ({
@@ -106,10 +113,20 @@ export function UsersManager() {
       });
       if (error) {
         setCreateError(error.message ?? "Erro ao criar usuário.");
+        addToast({
+          title: "Erro ao criar usuário",
+          description: error.message ?? "Tente novamente.",
+          type: "error",
+        });
         return;
       }
       setCreateOpen(false);
       setForm({ name: "", email: "", password: "", role: "user" });
+      addToast({
+        title: "Usuário criado",
+        description: `${form.email} foi cadastrado com sucesso.`,
+        type: "success",
+      });
       fetchUsers();
     } finally {
       setCreating(false);
@@ -126,12 +143,23 @@ export function UsersManager() {
       });
       if (error) {
         setRoleError(error.message ?? "Erro ao alterar papel do usuário.");
+        addToast({
+          title: "Erro ao alterar papel",
+          description: error.message ?? "Tente novamente.",
+          type: "error",
+        });
         return false;
       }
       setRoleError(null);
+      const roleLabel = newRole === "admin" ? "administrador" : "usuário";
       setUsers((prev) =>
         prev.map((u) => (u.id === user.id ? { ...u, role: newRole } : u))
       );
+      addToast({
+        title: "Papel alterado",
+        description: `${user.email} agora é ${roleLabel}.`,
+        type: "success",
+      });
       return true;
     } catch {
       setRoleError("Erro inesperado ao alterar papel. Tente novamente.");
@@ -164,6 +192,11 @@ export function UsersManager() {
         setRoleError(
           "Não foi possível verificar os administradores. Tente novamente."
         );
+        addToast({
+          title: "Erro ao verificar administradores",
+          description: "Tente novamente.",
+          type: "error",
+        });
         return;
       }
       const hasOtherAdmin = (data?.users ?? []).some(
@@ -173,6 +206,11 @@ export function UsersManager() {
         setRoleError(
           "Este é o único administrador. Promova outro usuário para administrador antes de rebaixar esta conta."
         );
+        addToast({
+          title: "Único administrador",
+          description: "Promova outro usuário antes de rebaixar esta conta.",
+          type: "error",
+        });
         return;
       }
       const wasAdmin = roleTarget.role === "admin";
@@ -199,8 +237,18 @@ export function UsersManager() {
       });
       if (error) {
         setRemoveError(error.message ?? "Erro ao remover usuário.");
+        addToast({
+          title: "Erro ao remover usuário",
+          description: error.message ?? "Tente novamente.",
+          type: "error",
+        });
         return;
       }
+      addToast({
+        title: "Usuário removido",
+        description: `${removeTarget.email} foi removido com sucesso.`,
+        type: "success",
+      });
       setRemoveTarget(null);
       fetchUsers();
     } finally {
