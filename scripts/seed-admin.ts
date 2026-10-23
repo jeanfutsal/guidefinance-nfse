@@ -14,8 +14,8 @@
 import { auth } from "../src/lib/auth";
 import { prisma } from "../src/infra/db/prisma";
 
-const email = process.env.ADMIN_EMAIL;
-const password = process.env.ADMIN_PASSWORD;
+const email: string = process.env.ADMIN_EMAIL!;
+const password: string = process.env.ADMIN_PASSWORD!;
 const name = process.env.ADMIN_NAME ?? "Administrador";
 
 if (!email || !password) {
